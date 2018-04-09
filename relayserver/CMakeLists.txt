@@ -14,6 +14,7 @@ add_executable(
 	${PROJECT_NAME}
 	main.cpp
 	RelayServer.h RelayServer.cpp
+	TcpProtocol.h TcpProtocol.cpp
 )
 
 target_link_libraries(

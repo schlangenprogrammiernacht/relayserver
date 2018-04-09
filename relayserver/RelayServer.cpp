@@ -1,11 +1,11 @@
 #include "RelayServer.h"
 #include <iostream>
 #include <unistd.h>
-#include <TcpServer/TcpSocket.h>
-#include <TcpServer/EPoll.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <arpa/inet.h>
+#include <TcpServer/TcpSocket.h>
+#include <TcpServer/EPoll.h>
 
 RelayServer::RelayServer()
 {
@@ -27,6 +27,13 @@ RelayServer::RelayServer()
 		[this](TcpSocket& socket)
 		{
 			return OnDataAvailable(socket);
+		}
+	);
+
+	_tcpProtocol.SetMessageReceivedCallback(
+		[](std::vector<uint8_t> data)
+		{
+			std::cout << "received " << data.size() << " bytes." << std::endl;
 		}
 	);
 
@@ -65,7 +72,7 @@ int RelayServer::Run()
 			{
 				if (ev.data.fd == _clientSocket)
 				{
-					OnServerDataReceived(ev);
+					return _tcpProtocol.Read(_clientSocket);
 				}
 				else
 				{

@@ -4,6 +4,7 @@
 #include <TcpServer/TcpServer.h>
 #include <websocketpp/config/core.hpp>
 #include <websocketpp/server.hpp>
+#include "TcpProtocol.h"
 
 class RelayServer
 {
@@ -14,6 +15,8 @@ class RelayServer
 	private:
 		int _clientSocket;
 		TcpServer _tcpServer;
+		TcpProtocol _tcpProtocol;
+
 		typedef websocketpp::server<websocketpp::config::core> WebsocketServer;
 
 		WebsocketServer _websocketServer;
