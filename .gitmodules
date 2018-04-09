@@ -1,6 +1,6 @@
-[submodule "TcpServer"]
+[submodule "lib/TcpServer"]
 	path = lib/TcpServer
-	url = ../TcpServer.git
+	url = git@git.bingo-ev.de:GPN18Programmierspiel/TcpServer.git
 [submodule "lib/msgpack-c"]
 	path = lib/msgpack-c
 	url = https://github.com/msgpack/msgpack-c.git
