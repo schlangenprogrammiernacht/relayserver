@@ -6,6 +6,7 @@
 #include <arpa/inet.h>
 #include <TcpServer/TcpSocket.h>
 #include <TcpServer/EPoll.h>
+#include <msgpack.hpp>
 
 RelayServer::RelayServer()
 {
@@ -30,8 +31,8 @@ RelayServer::RelayServer()
 		}
 	);
 
-	_tcpProtocol.SetMessageReceivedCallback(
-		[](std::vector<uint8_t> data)
+	msg.SetMessageReceivedCallback(
+		[](std::vector<char> data)
 		{
 			std::cout << "received " << data.size() << " bytes." << std::endl;
 		}
@@ -72,7 +73,7 @@ int RelayServer::Run()
 			{
 				if (ev.data.fd == _clientSocket)
 				{
-					return _tcpProtocol.Read(_clientSocket);
+					return msg.Read(_clientSocket);
 				}
 				else
 				{

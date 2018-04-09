@@ -15,7 +15,7 @@ class RelayServer
 	private:
 		int _clientSocket;
 		TcpServer _tcpServer;
-		TcpProtocol _tcpProtocol;
+		TcpProtocol msg;
 
 		typedef websocketpp::server<websocketpp::config::core> WebsocketServer;
 
