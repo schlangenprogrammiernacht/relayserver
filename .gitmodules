@@ -1,0 +1,6 @@
+[submodule "TcpServer"]
+	path = lib/TcpServer
+	url = ../TcpServer.git
+[submodule "lib/msgpack-c"]
+	path = lib/msgpack-c
+	url = https://github.com/msgpack/msgpack-c.git
