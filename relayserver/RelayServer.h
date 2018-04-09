@@ -12,6 +12,7 @@ class RelayServer
 		int Run();
 
 	private:
+		int _clientSocket;
 		TcpServer _tcpServer;
 		typedef websocketpp::server<websocketpp::config::core> WebsocketServer;
 
@@ -21,4 +22,6 @@ class RelayServer
 		bool OnConnectionEstablished(TcpSocket &socket);
 		bool OnConnectionClosed(TcpSocket &socket);
 		bool OnDataAvailable(TcpSocket &socket);
+
+		bool OnServerDataReceived(const epoll_event& ev);
 };
