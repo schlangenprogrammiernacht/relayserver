@@ -45,20 +45,16 @@ void TcpProtocol::OnMessageReceived(std::vector<char> &data)
 {
 	_messageReceivedCallback(data);
 
-	msgpack::unpacker pac;
 	msgpack::object_handle obj;
+	uint64_t version, message_type;
 
-	pac.reserve_buffer(data.size());
-	memcpy(pac.buffer(), data.data(), data.size());
-	pac.buffer_consumed(data.size());
-
-	if (!pac.next(obj)) { return; }
+	msgpack::unpack(obj, data.data(), data.size());
 	if (obj.get().type != msgpack::type::ARRAY) { return; }
+
 	auto arr = obj.get().via.array;
 	if (arr.size<2) { return; }
-
-	uint64_t version = arr.ptr[0].via.u64;
-	uint64_t message_type = arr.ptr[1].via.u64;
+	arr.ptr[0] >> version;
+	arr.ptr[1] >> message_type;
 
 	switch (message_type)
 	{
@@ -71,7 +67,7 @@ void TcpProtocol::OnMessageReceived(std::vector<char> &data)
 			break;
 
 		case MsgPackProtocol::MESSAGE_TYPE_TICK:
-			std::cerr << "tick" << std::endl;
+			OnTickReceived(obj.get().as<MsgPackProtocol::TickMessage>());
 			break;
 
 		case MsgPackProtocol::MESSAGE_TYPE_BOT_SPAWN:
@@ -119,6 +115,11 @@ void TcpProtocol::OnWorldUpdateReceived(const MsgPackProtocol::WorldUpdateMessag
 	{
 		_food->addElement(food);
 	}
+}
+
+void TcpProtocol::OnTickReceived(const MsgPackProtocol::TickMessage &msg)
+{
+	(void)msg;
 }
 
 void TcpProtocol::OnFoodSpawnReceived(const MsgPackProtocol::FoodSpawnMessage& msg)
