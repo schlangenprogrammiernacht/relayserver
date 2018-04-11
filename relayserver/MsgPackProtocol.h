@@ -146,11 +146,10 @@ namespace msgpack {
 				msgpack::object const& operator()(msgpack::object const& o, MsgPackProtocol::GameInfoMessage& v) const
 				{
 					if (o.type != msgpack::type::ARRAY) throw msgpack::type_error();
-					auto& a = o.via.array;
-					if (a.size != 5) throw msgpack::type_error();
-					a.ptr[2].convert(v.world_size_x);
-					a.ptr[3].convert(v.world_size_y);
-					a.ptr[4].convert(v.food_decay_per_frame);
+					if (o.via.array.size != 5) throw msgpack::type_error();
+					o.via.array.ptr[2] >> v.world_size_x;
+					o.via.array.ptr[3] >> v.world_size_y;
+					o.via.array.ptr[4] >> v.food_decay_per_frame;
 					return o;
 				}
 			};
@@ -197,10 +196,9 @@ namespace msgpack {
 				msgpack::object const& operator()(msgpack::object const& o, MsgPackProtocol::WorldUpdateMessage& v) const
 				{
 					if (o.type != msgpack::type::ARRAY) throw msgpack::type_error();
-					auto &a = o.via.array;
-					if (a.size != 4) throw msgpack::type_error();
-					a.ptr[2].convert(v.bots);
-					a.ptr[3].convert(v.food);
+					if (o.via.array.size != 4) throw msgpack::type_error();
+					o.via.array.ptr[2] >> v.bots;
+					o.via.array.ptr[3] >> v.food;
 					return o;
 				}
 			};
@@ -222,9 +220,8 @@ namespace msgpack {
 				msgpack::object const& operator()(msgpack::object const& o, MsgPackProtocol::BotSpawnMessage& v) const
 				{
 					if (o.type != msgpack::type::ARRAY) throw msgpack::type_error();
-					auto& a = o.via.array;
-					if (a.size != 3) throw msgpack::type_error();
-					a.ptr[2].convert(v.bot);
+					if (o.via.array.size != 3) throw msgpack::type_error();
+					o.via.array.ptr[2] >> v.bot;
 					return o;
 				}
 			};
@@ -246,9 +243,8 @@ namespace msgpack {
 				msgpack::object const& operator()(msgpack::object const& o, MsgPackProtocol::BotMoveMessage& v) const
 				{
 					if (o.type != msgpack::type::ARRAY) throw msgpack::type_error();
-					auto& a = o.via.array;
-					if (a.size != 3) throw msgpack::type_error();
-					a.ptr[2].convert(v.items);
+					if (o.via.array.size != 3) throw msgpack::type_error();
+					o.via.array.ptr[2] >> v.items;
 					return o;
 				}
 			};
@@ -271,12 +267,11 @@ namespace msgpack {
 				msgpack::object const& operator()(msgpack::object const& o, MsgPackProtocol::BotMoveItem& v) const
 				{
 					if (o.type != msgpack::type::ARRAY) throw msgpack::type_error();
-					auto& a = o.via.array;
-					if (a.size != 4) throw msgpack::type_error();
-					a.ptr[0].convert(v.bot_id);
-					a.ptr[1].convert(v.new_segments);
-					a.ptr[2].convert(v.current_length);
-					a.ptr[3].convert(v.current_segment_radius);
+					if (o.via.array.size != 4) throw msgpack::type_error();
+					o.via.array.ptr[0] >> v.bot_id;
+					o.via.array.ptr[1] >> v.new_segments;
+					o.via.array.ptr[2] >> v.current_length;
+					o.via.array.ptr[3] >> v.current_segment_radius;
 					return o;
 				}
 			};
@@ -299,10 +294,9 @@ namespace msgpack {
 				msgpack::object const& operator()(msgpack::object const& o, MsgPackProtocol::BotKillMessage& v) const
 				{
 					if (o.type != msgpack::type::ARRAY) throw msgpack::type_error();
-					auto& a = o.via.array;
-					if (a.size != 4) throw msgpack::type_error();
-					a.ptr[2].convert(v.killer_id);
-					a.ptr[3].convert(v.victim_id);
+					if (o.via.array.size != 4) throw msgpack::type_error();
+					o.via.array.ptr[2] >> v.killer_id;
+					o.via.array.ptr[3] >> v.victim_id;
 					return o;
 				}
 			};
@@ -324,9 +318,8 @@ namespace msgpack {
 				msgpack::object const& operator()(msgpack::object const& o, MsgPackProtocol::FoodSpawnMessage& v) const
 				{
 					if (o.type != msgpack::type::ARRAY) throw msgpack::type_error();
-					auto& a = o.via.array;
-					if (a.size != 3) throw msgpack::type_error();
-					a.ptr[2].convert(v.new_food);
+					if (o.via.array.size != 3) throw msgpack::type_error();
+					o.via.array.ptr[2] >> v.new_food;
 					return o;
 				}
 			};
@@ -348,9 +341,8 @@ namespace msgpack {
 				msgpack::object const& operator()(msgpack::object const& o, MsgPackProtocol::FoodConsumeMessage& v) const
 				{
 					if (o.type != msgpack::type::ARRAY) throw msgpack::type_error();
-					auto& a = o.via.array;
-					if (a.size != 3) throw msgpack::type_error();
-					a.ptr[2].convert(v.items);
+					if (o.via.array.size != 3) throw msgpack::type_error();
+					o.via.array.ptr[2] >> v.items;
 					return o;
 				}
 			};
@@ -371,10 +363,9 @@ namespace msgpack {
 				msgpack::object const& operator()(msgpack::object const& o, MsgPackProtocol::FoodConsumeItem& v) const
 				{
 					if (o.type != msgpack::type::ARRAY) throw msgpack::type_error();
-					auto& a = o.via.array;
-					if (a.size != 2) throw msgpack::type_error();
-					a.ptr[0].convert(v.food_id);
-					a.ptr[1].convert(v.bot_id);
+					if (o.via.array.size != 2) throw msgpack::type_error();
+					o.via.array.ptr[0] >> v.food_id;
+					o.via.array.ptr[1] >> v.bot_id;
 					return o;
 				}
 			};
@@ -396,9 +387,8 @@ namespace msgpack {
 				msgpack::object const& operator()(msgpack::object const& o, MsgPackProtocol::FoodDecayMessage& v) const
 				{
 					if (o.type != msgpack::type::ARRAY) throw msgpack::type_error();
-					auto& a = o.via.array;
-					if (a.size != 3) throw msgpack::type_error();
-					a.ptr[2].convert(v.food_ids);
+					if (o.via.array.size != 3) throw msgpack::type_error();
+					o.via.array.ptr[2] >> v.food_ids;
 					return o;
 				}
 			};
@@ -447,14 +437,13 @@ namespace msgpack {
 				msgpack::object const& operator()(msgpack::object const& o, MsgPackProtocol::FoodItem& v) const
 				{
 					if (o.type != msgpack::type::ARRAY) throw msgpack::type_error();
-					auto &a = o.via.array;
-					if (a.size != 4) throw msgpack::type_error();
-					a.ptr[0].convert(v.guid);
+					if (o.via.array.size != 4) throw msgpack::type_error();
+					o.via.array.ptr[0] >> v.guid;
 					v.position = {
-						a.ptr[1].via.f64,
-						a.ptr[2].via.f64,
+						o.via.array.ptr[1].via.f64,
+						o.via.array.ptr[2].via.f64,
 					};
-					a.ptr[3].convert(v.value);
+					o.via.array.ptr[3] >> v.value;
 					return o;
 				}
 			};
@@ -486,14 +475,12 @@ namespace msgpack {
 				msgpack::object const& operator()(msgpack::object const& o, MsgPackProtocol::BotItem& v) const
 				{
 					if (o.type != msgpack::type::ARRAY) throw msgpack::type_error();
-					auto& a = o.via.array;
-					if (a.size != 5) throw msgpack::type_error();
-
-					a.ptr[0].convert(v.guid);
-					a.ptr[1].convert(v.name);
-					a.ptr[2].convert(v.segment_radius);
-					a.ptr[3].convert(v.segments);
-					a.ptr[4].convert(v.color);
+					if (o.via.array.size != 5) throw msgpack::type_error();
+					o.via.array.ptr[0] >> v.guid;
+					o.via.array.ptr[1] >> v.name;
+					o.via.array.ptr[2] >> v.segment_radius;
+					o.via.array.ptr[3] >> v.segments;
+					o.via.array.ptr[4] >> v.color;
 					for (auto &segmentItem: v.segments)
 					{
 						segmentItem.bot_id = v.guid;
