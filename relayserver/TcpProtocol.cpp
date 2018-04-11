@@ -63,197 +63,122 @@ void TcpProtocol::OnMessageReceived(std::vector<char> &data)
 	std::cerr << "version: " << version << " message type: " << message_type << std::endl;
 	switch (message_type)
 	{
-		case 0x00:
-			if (arr.size<5) { return; }
-			OnWorldInfoReceived(arr.ptr[2].via.f64, arr.ptr[3].via.f64, arr.ptr[4].via.f64);
+		case 0x00: // GameInfoMessage
+			OnGameInfoReceived(obj.get().as<MsgPackProtocol::GameInfoMessage>());
 			break;
 
-		case 0x01:
+		case 0x01: // WorldUpdateMessage
 		{
-			if (arr.size<4) { return; }
-			auto& bots = arr.ptr[2].via.array;
-			auto& foods = arr.ptr[3].via.array;
-
-			for (auto& item: bots)
+			auto msg = obj.get().as<MsgPackProtocol::WorldUpdateMessage>();
+			for (auto& bot: msg.bots)
 			{
-				auto &bot_arr = item.via.array;
-
-				auto bot = Bot{
-					bot_arr.ptr[0].via.u64, // guid
-					bot_arr.ptr[1].via.str.ptr, // name
-					bot_arr.ptr[2].via.f64, // segment_radius
-				};
-
-				bot.segments.reserve(100);
-				for (auto& segment_item: bot_arr.ptr[3].via.array)
-				{
-					auto& segment_arr = segment_item.via.array;
-					if (segment_arr.size<2) { continue; }
-					bot.segments.push_back({ bot.guid, Vector2D{ segment_arr.ptr[0].via.f64, segment_arr.ptr[1].via.f64 } });
-				}
-
-				for (auto& color: bot_arr.ptr[4].via.array)
-				{
-					bot.color.push_back(static_cast<uint32_t>(color.via.u64));
-				}
-
 				OnBotSpawnReceived(bot);
 			}
-
-			for (auto& item: foods)
+			for (auto& food: msg.food)
 			{
-				auto &fi = item.via.array;
-				if (fi.size < 3) { continue; }
-				OnFoodSpawnReceived({
-					static_cast<guid_t>(fi.ptr[0].via.i64), // guid
-					{fi.ptr[1].via.f64, fi.ptr[2].via.f64}, // position
-					fi.ptr[3].via.f64 // value
-				});
+				OnFoodSpawnReceived(food);
 			}
-
 			break;
 		}
 
-		case 0x10:
+		case 0x10: // TickMessage
 			std::cerr << "tick" << std::endl;
 			break;
 
-		case 0x20:
+		case 0x20: // BotSpawnMessage
 		{
-			if (arr.size<3) { return; }
-			auto& bot_arr = arr.ptr[2].via.array;
-			if (bot_arr.size<5) { return; }
-
-			auto bot = Bot{
-				bot_arr.ptr[0].via.u64, // guid
-				bot_arr.ptr[1].via.str.ptr, // name
-				bot_arr.ptr[2].via.f64, // segment_radius
-			};
-
-			bot.segments.reserve(100);
-			for (auto& segment_item: bot_arr.ptr[3].via.array)
-			{
-				auto& segment_arr = segment_item.via.array;
-				if (segment_arr.size<2) { continue; }
-				bot.segments.push_back({ bot.guid, Vector2D{ segment_arr.ptr[0].via.f64, segment_arr.ptr[1].via.f64 } });
-			}
-
-			for (auto& color: bot_arr.ptr[4].via.array)
-			{
-				bot.color.push_back(static_cast<uint32_t>(color.via.u64));
-			}
-
-			OnBotSpawnReceived(bot);
-
+			auto msg = obj.get().as<MsgPackProtocol::BotSpawnMessage>();
+			OnBotSpawnReceived(msg.bot);
 			break;
 		}
 
-		case 0x21:
-			if (arr.size<4) { return; }
-			OnBotKillReceived(arr.ptr[2].via.u64, arr.ptr[3].via.u64);
+		case 0x21: // BotKillMessage
+			OnBotKillReceived(obj.get().as<MsgPackProtocol::BotKillMessage>());
 			break;
 
-		case 0x22:
-			if (arr.size<3) { return; }
-			for (auto& item: arr.ptr[2].via.array)
+		case 0x22: // BotMoveMessage
+		{
+			auto msg = obj.get().as<MsgPackProtocol::BotMoveMessage>();
+			for (auto& item: msg.items)
 			{
-				auto &bi = item.via.array;
-				if (bi.size < 4) { continue; }
-
-				guid_t bot_id = bi.ptr[0].via.u64;
-				std::vector<SnakeSegment> new_segments;
-				for (auto& segment: bi.ptr[1].via.array)
-				{
-					auto& seg_arr = segment.via.array;
-					if (seg_arr.size<2) { continue; }
-					new_segments.push_back({bot_id, Vector2D{seg_arr.ptr[0].via.f64, seg_arr.ptr[1].via.f64}});
-				}
-
-				OnBotMoveReceived(bot_id, new_segments, bi.ptr[2].via.u64, bi.ptr[3].via.f64);
+				OnBotMoveReceived(item);
 			}
 			break;
+		}
 
-		case 0x30:
-			if (arr.size<3) { return; }
-			for (auto& item: arr.ptr[2].via.array)
+		case 0x30: // FoodSpawnMessage
+		{
+			auto msg = obj.get().as<MsgPackProtocol::FoodSpawnMessage>();
+			for (auto& item: msg.new_food)
 			{
-				auto &fi = item.via.array;
-				if (fi.size < 3) { continue; }
-				OnFoodSpawnReceived({
-					static_cast<guid_t>(fi.ptr[0].via.i64), // guid
-					{fi.ptr[1].via.f64, fi.ptr[2].via.f64}, // position
-					fi.ptr[3].via.f64 // value
-				});
+				OnFoodSpawnReceived(item);
 			}
 			break;
+		}
 
-		case 0x31:
-			if (arr.size<3) { return; }
-			for (auto& item: arr.ptr[2].via.array)
+		case 0x31: // FoodConsumedMessage
+		{
+			auto msg = obj.get().as<MsgPackProtocol::FoodConsumeMessage>();
+			for (auto& item: msg.items)
 			{
-				auto &fi = item.via.array;
-				if (fi.size < 2) { continue; }
-				OnFoodConsumedReceived(
-					static_cast<guid_t>(fi.ptr[0].via.i64), // food guid
-					static_cast<guid_t>(fi.ptr[1].via.i64) // bot guid
-				);
+				OnFoodConsumedReceived(item);
 			}
 			break;
+		}
 
 		case 0x32:
-			if (arr.size<3) { return; }
-			for (auto& item: arr.ptr[2].via.array)
+			auto msg = obj.get().as<MsgPackProtocol::FoodDecayMessage>();
+			for (auto food_id: msg.food_ids)
 			{
-				OnFoodDecayedReceived(static_cast<guid_t>(item.via.u64));
+				OnFoodDecayedReceived(food_id);
 			}
 			break;
 	}
-
 }
 
-void TcpProtocol::OnWorldInfoReceived(real_t size_x, real_t size_y, real_t decay_rate)
+void TcpProtocol::OnGameInfoReceived(const MsgPackProtocol::GameInfoMessage& msg)
 {
-	_segments = std::make_unique<SnakeSegmentMap>(size_x, size_y, 1000);
-	_food = std::make_unique<FoodMap>(size_x, size_y, 1000);
-	_foodDecayRate = decay_rate;
+	_segments = std::make_unique<SnakeSegmentMap>(msg.world_size_x, msg.world_size_y, 1000);
+	_food = std::make_unique<FoodMap>(msg.world_size_x, msg.world_size_y, 1000);
+	_gameInfo = msg;
 }
 
-void TcpProtocol::OnFoodSpawnReceived(const TcpProtocol::Food &food)
+void TcpProtocol::OnFoodSpawnReceived(const FoodItem  &food)
 {
 	if (_food == nullptr) { return; }
 	_food->addElement(food);
 }
 
-void TcpProtocol::OnFoodConsumedReceived(guid_t food_id, guid_t bot_id)
+void TcpProtocol::OnFoodConsumedReceived(const MsgPackProtocol::FoodConsumeItem &item)
 {
 	if (_food == nullptr) { return; }
-	_food->erase_if([food_id](const Food& food) { return food.guid == food_id; });
+	_food->erase_if([item](const FoodItem& food) { return food.guid == item.food_id; });
 }
 
 void TcpProtocol::OnFoodDecayedReceived(guid_t food_id)
 {
 	if (_food == nullptr) { return; }
-	_food->erase_if([food_id](const Food& food) { return food.guid == food_id; });
+	_food->erase_if([food_id](const FoodItem& food) { return food.guid == food_id; });
 }
 
-void TcpProtocol::OnBotSpawnReceived(const TcpProtocol::Bot &bot)
+void TcpProtocol::OnBotSpawnReceived(const MsgPackProtocol::BotItem &bot)
 {
 	_bots.push_back(bot);
 }
 
-void TcpProtocol::OnBotKillReceived(guid_t killer_id, guid_t victim_id)
+void TcpProtocol::OnBotKillReceived(const MsgPackProtocol::BotKillMessage& msg)
 {
-	_bots.erase(std::remove_if(_bots.begin(), _bots.end(), [victim_id](const Bot& bot) { return bot.guid == victim_id; }));
+	_bots.erase(std::remove_if(_bots.begin(), _bots.end(), [msg](const BotItem& bot) { return bot.guid == msg.victim_id; }));
 }
 
-void TcpProtocol::OnBotMoveReceived(guid_t bot_id, std::vector<TcpProtocol::SnakeSegment> &new_segments, size_t new_length, real_t new_segment_radius)
+void TcpProtocol::OnBotMoveReceived(const MsgPackProtocol::BotMoveItem &item)
 {
-	auto it = std::find_if(_bots.begin(), _bots.end(), [bot_id](const Bot& bot) { return bot.guid == bot_id; });
+	auto it = std::find_if(_bots.begin(), _bots.end(), [item](const BotItem& bot) { return bot.guid == item.bot_id; });
 	if (it == _bots.end()) { return; }
 	auto& bot = *it;
 
-	bot.segments.insert(bot.segments.begin(), new_segments.begin(), new_segments.end());
-	bot.segments.resize(new_length);
-	bot.segment_radius = new_segment_radius;
+	bot.segments.insert(bot.segments.begin(), item.new_segments.begin(), item.new_segments.end());
+	bot.segments.resize(item.current_length);
+	bot.segment_radius = item.current_segment_radius;
 }
 

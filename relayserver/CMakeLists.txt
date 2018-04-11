@@ -15,7 +15,7 @@ add_executable(
 	main.cpp
 	RelayServer.h RelayServer.cpp
 	TcpProtocol.h TcpProtocol.cpp
-	SpatialMap.h
+	SpatialMap.h MsgPackProtocol.h
 )
 
 target_link_libraries(

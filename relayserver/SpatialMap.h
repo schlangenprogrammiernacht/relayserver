@@ -2,10 +2,7 @@
 #include <array>
 #include <vector>
 #include <functional>
-
-#include <Eigen/Geometry>
-typedef double real_t;
-typedef Eigen::Matrix<real_t, 2, 1> Vector2D;
+#include "types.h"
 
 template <class T> class SpatialMapRegion;
 
