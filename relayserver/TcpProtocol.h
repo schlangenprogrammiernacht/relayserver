@@ -42,12 +42,13 @@ class TcpProtocol
 		void OnMessageReceived(std::vector<char>& data);
 
 		void OnGameInfoReceived(const MsgPackProtocol::GameInfoMessage& msg);
+		void OnWorldUpdateReceived(const MsgPackProtocol::WorldUpdateMessage& msg);
 
-		void OnFoodSpawnReceived(const FoodItem& food);
-		void OnFoodConsumedReceived(const MsgPackProtocol::FoodConsumeItem& item);
-		void OnFoodDecayedReceived(guid_t food_id);
+		void OnFoodSpawnReceived(const MsgPackProtocol::FoodSpawnMessage& msg);
+		void OnFoodConsumedReceived(const MsgPackProtocol::FoodConsumeMessage& msg);
+		void OnFoodDecayedReceived(const MsgPackProtocol::FoodDecayMessage& msg);
 
-		void OnBotSpawnReceived(const MsgPackProtocol::BotItem& bot);
+		void OnBotSpawnReceived(const MsgPackProtocol::BotSpawnMessage& msg);
 		void OnBotKillReceived(const MsgPackProtocol::BotKillMessage &msg);
-		void OnBotMoveReceived(const MsgPackProtocol::BotMoveItem &item);
+		void OnBotMoveReceived(const MsgPackProtocol::BotMoveMessage &msg);
 };

@@ -34,7 +34,7 @@ RelayServer::RelayServer()
 	msg.SetMessageReceivedCallback(
 		[](std::vector<char> data)
 		{
-			std::cout << "received " << data.size() << " bytes." << std::endl;
+			//std::cout << "received " << data.size() << " bytes." << std::endl;
 		}
 	);
 

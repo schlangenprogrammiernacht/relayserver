@@ -60,7 +60,6 @@ void TcpProtocol::OnMessageReceived(std::vector<char> &data)
 	uint64_t version = arr.ptr[0].via.u64;
 	uint64_t message_type = arr.ptr[1].via.u64;
 
-	std::cerr << "version: " << version << " message type: " << message_type << std::endl;
 	switch (message_type)
 	{
 		case MsgPackProtocol::MESSAGE_TYPE_GAME_INFO:
@@ -68,70 +67,35 @@ void TcpProtocol::OnMessageReceived(std::vector<char> &data)
 			break;
 
 		case MsgPackProtocol::MESSAGE_TYPE_WORLD_UPDATE:
-		{
-			auto msg = obj.get().as<MsgPackProtocol::WorldUpdateMessage>();
-			for (auto& bot: msg.bots)
-			{
-				OnBotSpawnReceived(bot);
-			}
-			for (auto& food: msg.food)
-			{
-				OnFoodSpawnReceived(food);
-			}
+			OnWorldUpdateReceived(obj.get().as<MsgPackProtocol::WorldUpdateMessage>());
 			break;
-		}
 
 		case MsgPackProtocol::MESSAGE_TYPE_TICK:
 			std::cerr << "tick" << std::endl;
 			break;
 
 		case MsgPackProtocol::MESSAGE_TYPE_BOT_SPAWN:
-		{
-			auto msg = obj.get().as<MsgPackProtocol::BotSpawnMessage>();
-			OnBotSpawnReceived(msg.bot);
+			OnBotSpawnReceived(obj.get().as<MsgPackProtocol::BotSpawnMessage>());
 			break;
-		}
 
 		case MsgPackProtocol::MESSAGE_TYPE_BOT_KILL:
 			OnBotKillReceived(obj.get().as<MsgPackProtocol::BotKillMessage>());
 			break;
 
 		case MsgPackProtocol::MESSAGE_TYPE_BOT_MOVE:
-		{
-			auto msg = obj.get().as<MsgPackProtocol::BotMoveMessage>();
-			for (auto& item: msg.items)
-			{
-				OnBotMoveReceived(item);
-			}
+			OnBotMoveReceived(obj.get().as<MsgPackProtocol::BotMoveMessage>());
 			break;
-		}
 
 		case MsgPackProtocol::MESSAGE_TYPE_FOOD_SPAWN:
-		{
-			auto msg = obj.get().as<MsgPackProtocol::FoodSpawnMessage>();
-			for (auto& item: msg.new_food)
-			{
-				OnFoodSpawnReceived(item);
-			}
+			OnFoodSpawnReceived(obj.get().as<MsgPackProtocol::FoodSpawnMessage>());
 			break;
-		}
 
 		case MsgPackProtocol::MESSAGE_TYPE_FOOD_CONSUME:
-		{
-			auto msg = obj.get().as<MsgPackProtocol::FoodConsumeMessage>();
-			for (auto& item: msg.items)
-			{
-				OnFoodConsumedReceived(item);
-			}
+			OnFoodConsumedReceived(obj.get().as<MsgPackProtocol::FoodConsumeMessage>());
 			break;
-		}
 
 		case MsgPackProtocol::MESSAGE_TYPE_FOOD_DECAY:
-			auto msg = obj.get().as<MsgPackProtocol::FoodDecayMessage>();
-			for (auto food_id: msg.food_ids)
-			{
-				OnFoodDecayedReceived(food_id);
-			}
+			OnFoodDecayedReceived(obj.get().as<MsgPackProtocol::FoodDecayMessage>());
 			break;
 	}
 }
@@ -143,27 +107,50 @@ void TcpProtocol::OnGameInfoReceived(const MsgPackProtocol::GameInfoMessage& msg
 	_gameInfo = msg;
 }
 
-void TcpProtocol::OnFoodSpawnReceived(const FoodItem  &food)
+void TcpProtocol::OnWorldUpdateReceived(const MsgPackProtocol::WorldUpdateMessage &msg)
 {
+	for (auto& bot: msg.bots)
+	{
+		_bots.push_back(bot);
+	}
+
 	if (_food == nullptr) { return; }
-	_food->addElement(food);
+	for (auto& food: msg.food)
+	{
+		_food->addElement(food);
+	}
 }
 
-void TcpProtocol::OnFoodConsumedReceived(const MsgPackProtocol::FoodConsumeItem &item)
+void TcpProtocol::OnFoodSpawnReceived(const MsgPackProtocol::FoodSpawnMessage& msg)
 {
 	if (_food == nullptr) { return; }
-	_food->erase_if([item](const FoodItem& food) { return food.guid == item.food_id; });
+	for (auto& item: msg.new_food)
+	{
+		_food->addElement(item);
+	}
 }
 
-void TcpProtocol::OnFoodDecayedReceived(guid_t food_id)
+void TcpProtocol::OnFoodConsumedReceived(const MsgPackProtocol::FoodConsumeMessage &msg)
 {
 	if (_food == nullptr) { return; }
-	_food->erase_if([food_id](const FoodItem& food) { return food.guid == food_id; });
+	for (auto& item: msg.items)
+	{
+		_food->erase_if([item](const FoodItem& food) { return food.guid == item.food_id; });
+	}
 }
 
-void TcpProtocol::OnBotSpawnReceived(const MsgPackProtocol::BotItem &bot)
+void TcpProtocol::OnFoodDecayedReceived(const MsgPackProtocol::FoodDecayMessage &msg)
 {
-	_bots.push_back(bot);
+	if (_food == nullptr) { return; }
+	for (auto& item: msg.food_ids)
+	{
+		_food->erase_if([item](const FoodItem& food) { return food.guid == item; });
+	}
+}
+
+void TcpProtocol::OnBotSpawnReceived(const MsgPackProtocol::BotSpawnMessage &msg)
+{
+	_bots.push_back(msg.bot);
 }
 
 void TcpProtocol::OnBotKillReceived(const MsgPackProtocol::BotKillMessage& msg)
@@ -171,14 +158,17 @@ void TcpProtocol::OnBotKillReceived(const MsgPackProtocol::BotKillMessage& msg)
 	_bots.erase(std::remove_if(_bots.begin(), _bots.end(), [msg](const BotItem& bot) { return bot.guid == msg.victim_id; }));
 }
 
-void TcpProtocol::OnBotMoveReceived(const MsgPackProtocol::BotMoveItem &item)
+void TcpProtocol::OnBotMoveReceived(const MsgPackProtocol::BotMoveMessage &msg)
 {
-	auto it = std::find_if(_bots.begin(), _bots.end(), [item](const BotItem& bot) { return bot.guid == item.bot_id; });
-	if (it == _bots.end()) { return; }
-	auto& bot = *it;
+	for (auto& item: msg.items)
+	{
+		auto it = std::find_if(_bots.begin(), _bots.end(), [item](const BotItem& bot) { return bot.guid == item.bot_id; });
+		if (it == _bots.end()) { return; }
+		auto& bot = *it;
 
-	bot.segments.insert(bot.segments.begin(), item.new_segments.begin(), item.new_segments.end());
-	bot.segments.resize(item.current_length);
-	bot.segment_radius = item.current_segment_radius;
+		bot.segments.insert(bot.segments.begin(), item.new_segments.begin(), item.new_segments.end());
+		bot.segments.resize(item.current_length);
+		bot.segment_radius = item.current_segment_radius;
+	}
 }
 
