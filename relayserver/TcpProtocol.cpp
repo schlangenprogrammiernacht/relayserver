@@ -63,11 +63,11 @@ void TcpProtocol::OnMessageReceived(std::vector<char> &data)
 	std::cerr << "version: " << version << " message type: " << message_type << std::endl;
 	switch (message_type)
 	{
-		case 0x00: // GameInfoMessage
+		case MsgPackProtocol::MESSAGE_TYPE_GAME_INFO:
 			OnGameInfoReceived(obj.get().as<MsgPackProtocol::GameInfoMessage>());
 			break;
 
-		case 0x01: // WorldUpdateMessage
+		case MsgPackProtocol::MESSAGE_TYPE_WORLD_UPDATE:
 		{
 			auto msg = obj.get().as<MsgPackProtocol::WorldUpdateMessage>();
 			for (auto& bot: msg.bots)
@@ -81,22 +81,22 @@ void TcpProtocol::OnMessageReceived(std::vector<char> &data)
 			break;
 		}
 
-		case 0x10: // TickMessage
+		case MsgPackProtocol::MESSAGE_TYPE_TICK:
 			std::cerr << "tick" << std::endl;
 			break;
 
-		case 0x20: // BotSpawnMessage
+		case MsgPackProtocol::MESSAGE_TYPE_BOT_SPAWN:
 		{
 			auto msg = obj.get().as<MsgPackProtocol::BotSpawnMessage>();
 			OnBotSpawnReceived(msg.bot);
 			break;
 		}
 
-		case 0x21: // BotKillMessage
+		case MsgPackProtocol::MESSAGE_TYPE_BOT_KILL:
 			OnBotKillReceived(obj.get().as<MsgPackProtocol::BotKillMessage>());
 			break;
 
-		case 0x22: // BotMoveMessage
+		case MsgPackProtocol::MESSAGE_TYPE_BOT_MOVE:
 		{
 			auto msg = obj.get().as<MsgPackProtocol::BotMoveMessage>();
 			for (auto& item: msg.items)
@@ -106,7 +106,7 @@ void TcpProtocol::OnMessageReceived(std::vector<char> &data)
 			break;
 		}
 
-		case 0x30: // FoodSpawnMessage
+		case MsgPackProtocol::MESSAGE_TYPE_FOOD_SPAWN:
 		{
 			auto msg = obj.get().as<MsgPackProtocol::FoodSpawnMessage>();
 			for (auto& item: msg.new_food)
@@ -116,7 +116,7 @@ void TcpProtocol::OnMessageReceived(std::vector<char> &data)
 			break;
 		}
 
-		case 0x31: // FoodConsumedMessage
+		case MsgPackProtocol::MESSAGE_TYPE_FOOD_CONSUME:
 		{
 			auto msg = obj.get().as<MsgPackProtocol::FoodConsumeMessage>();
 			for (auto& item: msg.items)
@@ -126,7 +126,7 @@ void TcpProtocol::OnMessageReceived(std::vector<char> &data)
 			break;
 		}
 
-		case 0x32:
+		case MsgPackProtocol::MESSAGE_TYPE_FOOD_DECAY:
 			auto msg = obj.get().as<MsgPackProtocol::FoodDecayMessage>();
 			for (auto food_id: msg.food_ids)
 			{
