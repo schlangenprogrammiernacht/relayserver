@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cstdint>
 #include <vector>
 #include <msgpack.hpp>
 
@@ -166,6 +165,17 @@ namespace msgpack {
 				}
 			};
 
+			template<> struct convert<MsgPackProtocol::PlayerInfoMessage>
+			{
+				msgpack::object const& operator()(msgpack::object const& o, MsgPackProtocol::PlayerInfoMessage& v) const
+				{
+					if (o.type != msgpack::type::ARRAY) throw msgpack::type_error();
+					if (o.via.array.size != 3) throw msgpack::type_error();
+					o.via.array.ptr[2] >> v.player_id;
+					return o;
+				}
+			};
+
 			template <> struct pack<MsgPackProtocol::TickMessage>
 			{
 				template <typename Stream> msgpack::packer<Stream>& operator()(msgpack::packer<Stream>& o, MsgPackProtocol::TickMessage const& v) const
@@ -174,6 +184,17 @@ namespace msgpack {
 					o.pack(MsgPackProtocol::PROTOCOL_VERSION);
 					o.pack(static_cast<int>(MsgPackProtocol::MESSAGE_TYPE_TICK));
 					o.pack(v.frame_id);
+					return o;
+				}
+			};
+
+			template<> struct convert<MsgPackProtocol::TickMessage>
+			{
+				msgpack::object const& operator()(msgpack::object const& o, MsgPackProtocol::TickMessage& v) const
+				{
+					if (o.type != msgpack::type::ARRAY) throw msgpack::type_error();
+					if (o.via.array.size != 3) throw msgpack::type_error();
+					o.via.array.ptr[2] >> v.frame_id;
 					return o;
 				}
 			};
