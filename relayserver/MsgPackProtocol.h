@@ -149,11 +149,9 @@ namespace msgpack {
 					if (o.type != msgpack::type::ARRAY) throw msgpack::type_error();
 					auto& a = o.via.array;
 					if (a.size != 5) throw msgpack::type_error();
-					v = MsgPackProtocol::GameInfoMessage {
-						a.ptr[2].via.f64,
-						a.ptr[3].via.f64,
-						a.ptr[4].via.f64
-					};
+					v.world_size_x = a.ptr[2].via.f64;
+					v.world_size_y = a.ptr[3].via.f64;
+					v.food_decay_per_frame = a.ptr[4].via.f64;
 					return o;
 				}
 			};
@@ -200,12 +198,10 @@ namespace msgpack {
 				msgpack::object const& operator()(msgpack::object const& o, MsgPackProtocol::WorldUpdateMessage& v) const
 				{
 					if (o.type != msgpack::type::ARRAY) throw msgpack::type_error();
-					if (o.via.array.size != 4) throw msgpack::type_error();
-
-					v = MsgPackProtocol::WorldUpdateMessage {
-						o.via.array.ptr[2].as<std::vector<MsgPackProtocol::BotItem>>(),
-						o.via.array.ptr[3].as<std::vector<MsgPackProtocol::FoodItem>>()
-					};
+					auto &a = o.via.array;
+					if (a.size != 4) throw msgpack::type_error();
+					a.ptr[2].convert(v.bots);
+					a.ptr[3].convert(v.food);
 					return o;
 				}
 			};
@@ -425,12 +421,10 @@ namespace msgpack {
 				{
 					if (o.type != msgpack::type::ARRAY) throw msgpack::type_error();
 					if (o.via.array.size != 2) throw msgpack::type_error();
-					v = MsgPackProtocol::SnakeSegmentItem{
-						0,
-						Vector2D {
-							o.via.array.ptr[0].via.f64,
-							o.via.array.ptr[1].via.f64,
-						}
+					v.bot_id = 0;
+					v.position = {
+						o.via.array.ptr[0].via.f64,
+						o.via.array.ptr[1].via.f64,
 					};
 					return o;
 				}
@@ -454,15 +448,14 @@ namespace msgpack {
 				msgpack::object const& operator()(msgpack::object const& o, MsgPackProtocol::FoodItem& v) const
 				{
 					if (o.type != msgpack::type::ARRAY) throw msgpack::type_error();
-					if (o.via.array.size != 4) throw msgpack::type_error();
-					v = MsgPackProtocol::FoodItem {
-						o.via.array.ptr[0].via.u64,
-						Vector2D {
-							o.via.array.ptr[1].via.f64,
-							o.via.array.ptr[2].via.f64,
-						},
-						o.via.array.ptr[3].via.f64
+					auto &a = o.via.array;
+					if (a.size != 4) throw msgpack::type_error();
+					v.guid = a.ptr[0].via.u64;
+					v.position = {
+						a.ptr[1].via.f64,
+						a.ptr[2].via.f64,
 					};
+					v.value = a.ptr[3].via.f64;
 					return o;
 				}
 			};
@@ -497,26 +490,15 @@ namespace msgpack {
 					auto& a = o.via.array;
 					if (a.size != 5) throw msgpack::type_error();
 
-					guid_t bot_id = a.ptr[0].via.u64;
-
-					std::vector<MsgPackProtocol::SnakeSegmentItem> segments;
-					segments.reserve(128);
-					a.ptr[3].convert(segments);
-					for (auto &segmentItem: segments) {
-						segmentItem.bot_id = bot_id;
+					v.guid = a.ptr[0].via.u64;
+					a.ptr[1].convert(v.name);
+					v.segment_radius = a.ptr[2].via.f64;
+					a.ptr[3].convert(v.segments);
+					for (auto &segmentItem: v.segments)
+					{
+						segmentItem.bot_id = v.guid;
 					}
-
-					std::vector<uint32_t> colors;
-					colors.reserve(16);
-					a.ptr[4].convert(colors);
-
-					v = MsgPackProtocol::BotItem {
-						bot_id,
-						std::string { a.ptr[1].via.str.ptr, a.ptr[1].via.str.size },
-						a.ptr[2].via.f64,
-						segments,
-						colors
-					};
+					a.ptr[4].convert(v.color);
 					return o;
 				}
 			};
