@@ -31,10 +31,10 @@ RelayServer::RelayServer()
 		}
 	);
 
-	msg.SetMessageReceivedCallback(
-		[](std::vector<char> data)
+	msg.SetFrameCompleteCallback(
+		[](uint64_t frame_id)
 		{
-			//std::cout << "received " << data.size() << " bytes." << std::endl;
+			std::cout << "frame " << frame_id << " complete." << std::endl;
 		}
 	);
 

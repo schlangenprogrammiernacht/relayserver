@@ -14,11 +14,11 @@ using SnakeSegmentItem = MsgPackProtocol::SnakeSegmentItem;
 class TcpProtocol
 {
 	public:
-		typedef std::function<void(std::vector<char>&)> MessageReceivedCallback;
+		typedef std::function<void(uint64_t frame_id)> FrameCompleteCallback;
 		static constexpr const size_t BUFFER_SIZE = 1024*1024;
 
 		TcpProtocol();
-		void SetMessageReceivedCallback(MessageReceivedCallback callback);
+		void SetFrameCompleteCallback(FrameCompleteCallback callback);
 		bool Read(int socket);
 
 	private:
@@ -34,7 +34,7 @@ class TcpProtocol
 		size_t _bufHead=0;
 		size_t _bufTail=0;
 
-		MessageReceivedCallback _messageReceivedCallback;
+		FrameCompleteCallback _frameCompleteCallback;
 		std::unique_ptr<FoodMap> _food;
 		MsgPackProtocol::GameInfoMessage _gameInfo;
 

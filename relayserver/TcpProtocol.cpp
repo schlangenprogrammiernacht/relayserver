@@ -10,9 +10,9 @@ TcpProtocol::TcpProtocol()
 	_buf.resize(BUFFER_SIZE);
 }
 
-void TcpProtocol::SetMessageReceivedCallback(TcpProtocol::MessageReceivedCallback callback)
+void TcpProtocol::SetFrameCompleteCallback(TcpProtocol::FrameCompleteCallback callback)
 {
-	_messageReceivedCallback = callback;
+	_frameCompleteCallback = callback;
 }
 
 bool TcpProtocol::Read(int socket)
@@ -119,7 +119,7 @@ void TcpProtocol::OnWorldUpdateReceived(const MsgPackProtocol::WorldUpdateMessag
 
 void TcpProtocol::OnTickReceived(const MsgPackProtocol::TickMessage &msg)
 {
-	(void)msg;
+	_frameCompleteCallback(msg.frame_id);
 }
 
 void TcpProtocol::OnFoodSpawnReceived(const MsgPackProtocol::FoodSpawnMessage& msg)
