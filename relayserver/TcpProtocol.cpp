@@ -5,6 +5,11 @@
 #include <msgpack.hpp>
 #include <iostream>
 
+TcpProtocol::TcpProtocol()
+{
+	_buf.resize(BUFFER_SIZE);
+}
+
 void TcpProtocol::SetMessageReceivedCallback(TcpProtocol::MessageReceivedCallback callback)
 {
 	_messageReceivedCallback = callback;
@@ -12,40 +17,37 @@ void TcpProtocol::SetMessageReceivedCallback(TcpProtocol::MessageReceivedCallbac
 
 bool TcpProtocol::Read(int socket)
 {
-	std::array<char, 8192> readbuf;
-	ssize_t bytesRead = read(socket, readbuf.data(), readbuf.size());
-	if (bytesRead<=0) { return false; }
-	_buf.insert(_buf.end(), &readbuf[0], &readbuf[static_cast<size_t>(bytesRead)]);
+	ssize_t bytesRead = read(socket, &_buf[_bufTail], _buf.size()-_bufTail);
 
-	while (true)
+	if (bytesRead<=0) { return false; }
+	_bufTail += static_cast<size_t>(bytesRead);
+
+	while ((_bufTail - _bufHead)>=4)
 	{
-		if ((_awaitedSize==0) && (_buf.size() >= 4))
+		size_t size = 4 + ntohl(*(reinterpret_cast<uint32_t*>(&_buf[_bufHead])));
+		if (size <= (_bufTail - _bufHead))
 		{
-			_awaitedSize = ntohl(*(reinterpret_cast<uint32_t*>(&_buf[0])));
-			_buf.erase(_buf.begin(), _buf.begin()+4);
-		}
-		else if ((_awaitedSize>0) && (_buf.size() >= _awaitedSize))
-		{
-			std::vector<char> v(_buf.begin(), _buf.begin()+_awaitedSize);
-			OnMessageReceived(v);
-			_buf.erase(_buf.begin(), _buf.begin()+_awaitedSize);
-			_awaitedSize = 0;
+			OnMessageReceived(&_buf[_bufHead+4], size-4);
+			_bufHead += size;
 		}
 		else
 		{
-			return true;
+			break;
 		}
 	}
+
+	std::copy(_buf.begin()+_bufHead, _buf.begin()+_bufTail, _buf.begin());
+	_bufTail -= _bufHead;
+	_bufHead = 0;
+	return true;
 }
 
-void TcpProtocol::OnMessageReceived(std::vector<char> &data)
+void TcpProtocol::OnMessageReceived(const char* data, size_t count)
 {
-	_messageReceivedCallback(data);
-
 	msgpack::object_handle obj;
 	uint64_t version, message_type;
 
-	msgpack::unpack(obj, data.data(), data.size());
+	msgpack::unpack(obj, data, count);
 	if (obj.get().type != msgpack::type::ARRAY) { return; }
 
 	auto arr = obj.get().via.array;

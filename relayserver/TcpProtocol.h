@@ -15,6 +15,9 @@ class TcpProtocol
 {
 	public:
 		typedef std::function<void(std::vector<char>&)> MessageReceivedCallback;
+		static constexpr const size_t BUFFER_SIZE = 1024*1024;
+
+		TcpProtocol();
 		void SetMessageReceivedCallback(MessageReceivedCallback callback);
 		bool Read(int socket);
 
@@ -27,18 +30,18 @@ class TcpProtocol
 
 		typedef SpatialMap<SnakeSegmentItem, SPATIAL_MAP_TILES_X, SPATIAL_MAP_TILES_Y> SnakeSegmentMap;
 
-
-		size_t _awaitedSize = 0;
 		std::vector<char> _buf;
-		MessageReceivedCallback _messageReceivedCallback;
+		size_t _bufHead=0;
+		size_t _bufTail=0;
 
+		MessageReceivedCallback _messageReceivedCallback;
 		std::unique_ptr<FoodMap> _food;
 		MsgPackProtocol::GameInfoMessage _gameInfo;
 
 		std::vector<BotItem> _bots;
 		std::unique_ptr<SnakeSegmentMap> _segments;
 
-		void OnMessageReceived(std::vector<char>& data);
+		void OnMessageReceived(const char *data, size_t count);
 
 		void OnGameInfoReceived(const MsgPackProtocol::GameInfoMessage& msg);
 		void OnWorldUpdateReceived(const MsgPackProtocol::WorldUpdateMessage& msg);
