@@ -25,6 +25,7 @@ bool TcpProtocol::Read(int socket)
 	while ((_bufTail - _bufHead)>=4)
 	{
 		size_t size = 4 + ntohl(*(reinterpret_cast<uint32_t*>(&_buf[_bufHead])));
+		if (size > _buf.size()) { return false; }
 		if (size <= (_bufTail - _bufHead))
 		{
 			OnMessageReceived(&_buf[_bufHead+4], size-4);
