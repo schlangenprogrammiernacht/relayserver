@@ -16,6 +16,7 @@ add_executable(
 	RelayServer.h RelayServer.cpp
 	TcpProtocol.h TcpProtocol.cpp
 	SpatialMap.h MsgPackProtocol.h
+	WebsocketConnection.h WebsocketConnection.cpp
 )
 
 target_link_libraries(

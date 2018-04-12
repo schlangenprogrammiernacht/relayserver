@@ -5,6 +5,7 @@
 #include <websocketpp/config/core.hpp>
 #include <websocketpp/server.hpp>
 #include "TcpProtocol.h"
+#include "WebsocketConnection.h"
 
 class RelayServer
 {
@@ -15,12 +16,11 @@ class RelayServer
 	private:
 		int _clientSocket;
 		TcpServer _tcpServer;
-		TcpProtocol msg;
+		TcpProtocol _tcpProtocol;
 
 		typedef websocketpp::server<websocketpp::config::core> WebsocketServer;
-
 		WebsocketServer _websocketServer;
-		std::map<int, WebsocketServer::connection_ptr> _websocketConnections;
+		std::map<int, WebsocketConnection> _connections;
 
 		bool OnConnectionEstablished(TcpSocket &socket);
 		bool OnConnectionClosed(TcpSocket &socket);

@@ -31,10 +31,15 @@ RelayServer::RelayServer()
 		}
 	);
 
-	msg.SetFrameCompleteCallback(
-		[](uint64_t frame_id)
+	_tcpProtocol.SetFrameCompleteCallback(
+		[this](uint64_t frame_id)
 		{
 			std::cout << "frame " << frame_id << " complete." << std::endl;
+
+			for (auto& it: _connections)
+			{
+				it.second.FrameComplete(frame_id, _tcpProtocol);
+			}
 		}
 	);
 
@@ -73,7 +78,7 @@ int RelayServer::Run()
 			{
 				if (ev.data.fd == _clientSocket)
 				{
-					return msg.Read(_clientSocket);
+					return _tcpProtocol.Read(_clientSocket);
 				}
 				else
 				{
@@ -112,7 +117,7 @@ bool RelayServer::OnConnectionEstablished(TcpSocket &socket)
 	);
 
 	con->start();
-	_websocketConnections[socket.GetFileDescriptor()] = con;
+	_connections.emplace(socket.GetFileDescriptor(), WebsocketConnection { socket.GetFileDescriptor(), con });
 	return true;
 }
 
@@ -120,21 +125,21 @@ bool RelayServer::OnConnectionClosed(TcpSocket &socket)
 {
 	std::cerr << "connection to " << socket.GetPeer() << " closed." << std::endl;
 
-	auto it = _websocketConnections.find(socket.GetFileDescriptor());
-	if (it == _websocketConnections.end())
+	auto it = _connections.find(socket.GetFileDescriptor());
+	if (it == _connections.end())
 	{
 		return false;
 	}
 
-	it->second->eof();
-	_websocketConnections.erase(socket.GetFileDescriptor());
+	it->second.Eof();
+	_connections.erase(socket.GetFileDescriptor());
 	return true;
 }
 
 bool RelayServer::OnDataAvailable(TcpSocket &socket)
 {
-	auto it = _websocketConnections.find(socket.GetFileDescriptor());
-	if (it == _websocketConnections.end())
+	auto it = _connections.find(socket.GetFileDescriptor());
+	if (it == _connections.end())
 	{
 		return false;
 	}
@@ -143,7 +148,7 @@ bool RelayServer::OnDataAvailable(TcpSocket &socket)
 	ssize_t count = socket.Read(data, sizeof(data));
 	if (count > 0)
 	{
-		it->second->read_some(data, static_cast<size_t>(count));
+		it->second.DataReceived(data, static_cast<size_t>(count));
 	}
 	return true;
 }
