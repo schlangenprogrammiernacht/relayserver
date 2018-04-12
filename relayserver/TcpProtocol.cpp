@@ -43,6 +43,11 @@ bool TcpProtocol::Read(int socket)
 	return true;
 }
 
+const MsgPackProtocol::GameInfoMessage &TcpProtocol::GetGameInfo() const
+{
+	return _gameInfo;
+}
+
 void TcpProtocol::OnMessageReceived(const char* data, size_t count)
 {
 	msgpack::object_handle obj;

@@ -21,6 +21,8 @@ class TcpProtocol
 		void SetFrameCompleteCallback(FrameCompleteCallback callback);
 		bool Read(int socket);
 
+		const MsgPackProtocol::GameInfoMessage& GetGameInfo() const;
+
 	private:
 		static constexpr const size_t SPATIAL_MAP_TILES_X = 128;
 		static constexpr const size_t SPATIAL_MAP_TILES_Y = 128;
