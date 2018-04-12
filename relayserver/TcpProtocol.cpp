@@ -12,7 +12,7 @@ void TcpProtocol::SetMessageReceivedCallback(TcpProtocol::MessageReceivedCallbac
 
 bool TcpProtocol::Read(int socket)
 {
-	std::array<char, 1024> readbuf;
+	std::array<char, 8192> readbuf;
 	ssize_t bytesRead = read(socket, readbuf.data(), readbuf.size());
 	if (bytesRead<=0) { return false; }
 	_buf.insert(_buf.end(), &readbuf[0], &readbuf[static_cast<size_t>(bytesRead)]);
@@ -21,10 +21,7 @@ bool TcpProtocol::Read(int socket)
 	{
 		if ((_awaitedSize==0) && (_buf.size() >= 4))
 		{
-			_awaitedSize = static_cast<uint8_t>(_buf[0])<<24
-						 | static_cast<uint8_t>(_buf[1])<<16
-						 | static_cast<uint8_t>(_buf[2])<<8
-						 | static_cast<uint8_t>(_buf[3])<<0;
+			_awaitedSize = ntohl(*(reinterpret_cast<uint32_t*>(&_buf[0])));
 			_buf.erase(_buf.begin(), _buf.begin()+4);
 		}
 		else if ((_awaitedSize>0) && (_buf.size() >= _awaitedSize))

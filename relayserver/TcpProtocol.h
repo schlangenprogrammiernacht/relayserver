@@ -2,7 +2,6 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <functional>
-#include <deque>
 #include <vector>
 #include <memory>
 #include "SpatialMap.h"
@@ -30,7 +29,7 @@ class TcpProtocol
 
 
 		size_t _awaitedSize = 0;
-		std::deque<char> _buf;
+		std::vector<char> _buf;
 		MessageReceivedCallback _messageReceivedCallback;
 
 		std::unique_ptr<FoodMap> _food;
