@@ -34,7 +34,7 @@ RelayServer::RelayServer()
 	_tcpProtocol.SetFrameCompleteCallback(
 		[this](uint64_t frame_id)
 		{
-			std::cout << "frame " << frame_id << " complete." << std::endl;
+			//std::cout << "frame " << frame_id << " complete." << std::endl;
 
 			for (auto& it: _connections)
 			{
@@ -97,7 +97,6 @@ bool RelayServer::OnConnectionEstablished(TcpSocket &socket)
 	con->set_write_handler(
 		[&socket](websocketpp::connection_hdl, char const* data, size_t size)
 		{
-			std::cerr << "reply" << std::endl;
 			if (socket.Write(data, size, false) != static_cast<ssize_t>(size))
 			{
 				return websocketpp::transport::iostream::error::make_error_code(

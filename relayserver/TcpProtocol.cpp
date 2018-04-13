@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <unistd.h>
 #include <array>
+#include <algorithm>
 #include <msgpack.hpp>
 #include <iostream>
 
@@ -46,6 +47,45 @@ bool TcpProtocol::Read(int socket)
 const MsgPackProtocol::GameInfoMessage &TcpProtocol::GetGameInfo() const
 {
 	return _gameInfo;
+}
+
+bool TcpProtocol::GetWorldUpdate(msgpack::sbuffer &buf) const
+{
+	MsgPackProtocol::WorldUpdateMessage msg;
+	msg.bots = _bots;
+	msg.food = _foodVect;
+	msgpack::pack(buf, msg);
+	return true;
+}
+
+bool TcpProtocol::GetFoodSpawnMessages(msgpack::sbuffer &buf) const
+{
+	for (auto& msg: _foodSpawnMessages)
+	{
+		msgpack::pack(buf, msg);
+		// FIXME this will fail with multiple foodSpawnMessages, since only one message should be in one buffer
+	}
+	return true;
+}
+
+bool TcpProtocol::GetFoodConsumeMessages(msgpack::sbuffer &buf) const
+{
+	for (auto& msg: _foodConsumeMessages)
+	{
+		msgpack::pack(buf, msg);
+		// FIXME this will fail with multiple foodSpawnMessages, since only one message should be in one buffer
+	}
+	return true;
+}
+
+bool TcpProtocol::GetFoodDecayMessages(msgpack::sbuffer &buf) const
+{
+	for (auto& msg: _foodDecayMessages)
+	{
+		msgpack::pack(buf, msg);
+		// FIXME this will fail with multiple foodSpawnMessages, since only one message should be in one buffer
+	}
+	return true;
 }
 
 void TcpProtocol::OnMessageReceived(const char* data, size_t count)
@@ -104,54 +144,51 @@ void TcpProtocol::OnMessageReceived(const char* data, size_t count)
 void TcpProtocol::OnGameInfoReceived(const MsgPackProtocol::GameInfoMessage& msg)
 {
 	_segments = std::make_unique<SnakeSegmentMap>(msg.world_size_x, msg.world_size_y, 1000);
-	_food = std::make_unique<FoodMap>(msg.world_size_x, msg.world_size_y, 1000);
+	_foodMap = std::make_unique<FoodMap>(msg.world_size_x, msg.world_size_y, 1000);
 	_gameInfo = msg;
 }
 
 void TcpProtocol::OnWorldUpdateReceived(const MsgPackProtocol::WorldUpdateMessage &msg)
 {
-	for (auto& bot: msg.bots)
-	{
-		_bots.push_back(bot);
-	}
-
-	if (_food == nullptr) { return; }
-	for (auto& food: msg.food)
-	{
-		_food->addElement(food);
-	}
+	_bots = msg.bots;
+	_foodVect = msg.food;
 }
 
 void TcpProtocol::OnTickReceived(const MsgPackProtocol::TickMessage &msg)
 {
 	_frameCompleteCallback(msg.frame_id);
+	_foodSpawnMessages.clear();
+	_foodConsumeMessages.clear();
+	_foodDecayMessages.clear();
 }
 
 void TcpProtocol::OnFoodSpawnReceived(const MsgPackProtocol::FoodSpawnMessage& msg)
 {
-	if (_food == nullptr) { return; }
-	for (auto& item: msg.new_food)
-	{
-		_food->addElement(item);
-	}
+	_foodSpawnMessages.push_back(msg);
+	_foodVect.insert(_foodVect.end(), msg.new_food.begin(), msg.new_food.end());
 }
 
 void TcpProtocol::OnFoodConsumedReceived(const MsgPackProtocol::FoodConsumeMessage &msg)
 {
-	if (_food == nullptr) { return; }
-	for (auto& item: msg.items)
-	{
-		_food->erase_if([item](const FoodItem& food) { return food.guid == item.food_id; });
-	}
+	_foodConsumeMessages.push_back(msg);
+	_foodVect.erase(std::remove_if(_foodVect.begin(), _foodVect.end(), [&msg](const FoodItem& food) {
+		for (auto& item: msg.items)
+		{
+			if (food.guid == item.food_id)
+			{
+				return true;
+			}
+		}
+		return false;
+	}));
 }
 
 void TcpProtocol::OnFoodDecayedReceived(const MsgPackProtocol::FoodDecayMessage &msg)
 {
-	if (_food == nullptr) { return; }
-	for (auto& item: msg.food_ids)
-	{
-		_food->erase_if([item](const FoodItem& food) { return food.guid == item; });
-	}
+	_foodDecayMessages.push_back(msg);
+	_foodVect.erase(std::remove_if(_foodVect.begin(), _foodVect.end(), [&msg](const FoodItem& food) {
+		return std::find(msg.food_ids.begin(), msg.food_ids.end(), food.guid) != msg.food_ids.end();
+	}));
 }
 
 void TcpProtocol::OnBotSpawnReceived(const MsgPackProtocol::BotSpawnMessage &msg)

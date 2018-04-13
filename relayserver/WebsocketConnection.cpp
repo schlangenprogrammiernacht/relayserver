@@ -9,17 +9,38 @@ WebsocketConnection::WebsocketConnection(int socket, WebsocketServer::connection
 
 void WebsocketConnection::Eof()
 {
-	_websocket->eof();
+	_websocket->fatal_error();
 }
 
 void WebsocketConnection::DataReceived(const char *data, size_t count)
 {
-	_websocket->read_some(data, count);
+	_websocket->read_all(data, count);
 }
 
 void WebsocketConnection::FrameComplete(uint64_t frame_id, const TcpProtocol &proto)
 {
-	msgpack::sbuffer buf;
-	msgpack::pack(buf, proto.GetGameInfo());
-	_websocket->send(buf.data(), buf.size());
+	if (!_firstFrameSent)
+	{
+		msgpack::sbuffer buf;
+		msgpack::pack(buf, proto.GetGameInfo());
+		_websocket->send(buf.data(), buf.size());
+
+		buf.clear();
+		proto.GetWorldUpdate(buf);
+		_websocket->send(buf.data(), buf.size());
+
+		_firstFrameSent = true;
+	}
+	else
+	{
+		msgpack::sbuffer buf;
+		proto.GetFoodSpawnMessages(buf);
+		_websocket->send(buf.data(), buf.size());
+		buf.clear();
+		proto.GetFoodConsumeMessages(buf);
+		_websocket->send(buf.data(), buf.size());
+		buf.clear();
+		proto.GetFoodDecayMessages(buf);
+		_websocket->send(buf.data(), buf.size());
+	}
 }
