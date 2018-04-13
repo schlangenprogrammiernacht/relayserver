@@ -6,8 +6,8 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 
 include_directories(
 	${PROJECT_NAME}
-	lib/msgpack-c/include/
-	lib/TcpServer/TcpServer/include/
+	../lib/uWebSockets/src
+	../lib/msgpack-c/include/
 )
 
 add_executable(
@@ -22,4 +22,9 @@ add_executable(
 target_link_libraries(
 	${PROJECT_NAME}
 	tcpserver
+	uWebSockets
+	pthread
+	ssl
+	crypto
+	z
 )

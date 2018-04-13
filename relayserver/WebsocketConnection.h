@@ -1,23 +1,17 @@
 #pragma once
 
-#include <websocketpp/config/core.hpp>
-#include <websocketpp/server.hpp>
+#include <uWS.h>
 
 class TcpProtocol;
 
 class WebsocketConnection
 {
 	public:
-		typedef websocketpp::server<websocketpp::config::core> WebsocketServer;
-
-		WebsocketConnection(int socket, WebsocketServer::connection_ptr websocket);
-		void Eof();
-		void DataReceived(const char *data, size_t count);
+		WebsocketConnection(uWS::WebSocket<uWS::SERVER> *websocket);
 		void FrameComplete(uint64_t frame_id, const TcpProtocol& proto);
 
 	private:
-		int _socket;
-		WebsocketServer::connection_ptr _websocket;
+		uWS::WebSocket<uWS::SERVER> *_websocket;
 		bool _firstFrameSent = false;
 
 };

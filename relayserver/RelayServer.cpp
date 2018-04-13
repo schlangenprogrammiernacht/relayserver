@@ -1,63 +1,15 @@
 #include "RelayServer.h"
 #include <iostream>
-#include <unistd.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <arpa/inet.h>
-#include <TcpServer/TcpSocket.h>
 #include <TcpServer/EPoll.h>
-#include <msgpack.hpp>
 
 RelayServer::RelayServer()
 {
-	_tcpServer.AddConnectionEstablishedListener(
-		[this](TcpSocket& socket)
-		{
-			return OnConnectionEstablished(socket);
-		}
-	);
-
-	_tcpServer.AddConnectionClosedListener(
-		[this](TcpSocket& socket)
-		{
-			return OnConnectionClosed(socket);
-		}
-	);
-
-	_tcpServer.AddDataAvailableListener(
-		[this](TcpSocket& socket)
-		{
-			return OnDataAvailable(socket);
-		}
-	);
-
-	_tcpProtocol.SetFrameCompleteCallback(
-		[this](uint64_t frame_id)
-		{
-			//std::cout << "frame " << frame_id << " complete." << std::endl;
-
-			for (auto& it: _connections)
-			{
-				it.second.FrameComplete(frame_id, _tcpProtocol);
-			}
-		}
-	);
-
-	_websocketServer.clear_access_channels(websocketpp::log::alevel::all);
-	_websocketServer.set_access_channels(websocketpp::log::alevel::connect);
-	_websocketServer.set_access_channels(websocketpp::log::alevel::disconnect);
-	_websocketServer.set_access_channels(websocketpp::log::alevel::app);
-	// websocketServer.set_message_handler()...
 }
 
 int RelayServer::Run()
 {
+	uWS::Hub h;
 	EPoll epoll;
-	if(!_tcpServer.Listen(9009))
-	{
-		return -1;
-	}
-	epoll.AddFileDescriptor(_tcpServer.GetEPoll().GetFileDescriptor(), EPOLLIN|EPOLLPRI|EPOLLERR|EPOLLRDHUP|EPOLLHUP);
 
 	_clientSocket = socket(AF_INET, SOCK_STREAM, 0);
 	struct sockaddr_in serv_addr;
@@ -69,12 +21,57 @@ int RelayServer::Run()
 		perror("connect to server failed");
 		return -1;
 	}
+
+	_tcpProtocol.SetFrameCompleteCallback(
+		[this, &h](uint64_t frame_id)
+		{
+			h.getDefaultGroup<uWS::SERVER>().forEach(
+				[this, frame_id](uWS::WebSocket<uWS::SERVER>* sock)
+				{
+					auto con = static_cast<WebsocketConnection*>(sock->getUserData());
+					con->FrameComplete(frame_id, _tcpProtocol);
+				}
+			);
+			std::cout << "frame " << frame_id << " complete." << std::endl;
+		}
+	);
 	epoll.AddFileDescriptor(_clientSocket, EPOLLIN|EPOLLPRI|EPOLLERR);
 
-	while(true)
+	h.onConnection(
+		[](uWS::WebSocket<uWS::SERVER> *ws, uWS::HttpRequest req)
+		{
+			ws->setUserData(new WebsocketConnection(ws));
+		}
+	);
+	h.onDisconnection(
+		[](uWS::WebSocket<uWS::SERVER> *ws, int code, const char *message, size_t length)
+		{
+			auto *con = static_cast<WebsocketConnection*>(ws->getUserData());
+			delete con;
+		}
+	);
+
+	h.onMessage([](uWS::WebSocket<uWS::SERVER> *ws, char *message, size_t length, uWS::OpCode opCode)
+	{
+		//ws->send(message, length, opCode);
+	});
+
+	std::string response = "Hello!";
+	h.onHttpRequest([&](uWS::HttpResponse *res, uWS::HttpRequest req, char *data, size_t length, size_t remainingBytes)
+	{
+		res->end(response.data(), response.length());
+	});
+
+	if (!h.listen(9009))
+	{
+		return -1;
+	}
+
+	epoll.AddFileDescriptor(h.getLoop()->getEpollFd(), EPOLLIN|EPOLLPRI|EPOLLERR|EPOLLRDHUP|EPOLLHUP); // TODO check which events are neccessary
+	while (true)
 	{
 		epoll.Poll(1000,
-			[this](const epoll_event& ev)
+			[this, &h](const epoll_event& ev)
 			{
 				if (ev.data.fd == _clientSocket)
 				{
@@ -82,83 +79,10 @@ int RelayServer::Run()
 				}
 				else
 				{
-					_tcpServer.Poll(0);
+					h.poll();
 				}
 				return true;
 			}
 		);
 	}
-}
-
-bool RelayServer::OnConnectionEstablished(TcpSocket &socket)
-{
-	std::cerr << "connection established to " << socket.GetPeer() << std::endl;
-	auto con = _websocketServer.get_connection();
-	con->set_write_handler(
-		[&socket](websocketpp::connection_hdl, char const* data, size_t size)
-		{
-			if (socket.Write(data, size, false) != static_cast<ssize_t>(size))
-			{
-				return websocketpp::transport::iostream::error::make_error_code(
-					websocketpp::transport::iostream::error::general
-				);
-			}
-			return websocketpp::lib::error_code();
-		}
-	);
-
-	con->set_shutdown_handler(
-		[&socket](websocketpp::connection_hdl)
-		{
-			socket.Close();
-			return websocketpp::lib::error_code();
-		}
-	);
-
-	con->start();
-	_connections.emplace(socket.GetFileDescriptor(), WebsocketConnection { socket.GetFileDescriptor(), con });
-	return true;
-}
-
-bool RelayServer::OnConnectionClosed(TcpSocket &socket)
-{
-	std::cerr << "connection to " << socket.GetPeer() << " closed." << std::endl;
-
-	auto it = _connections.find(socket.GetFileDescriptor());
-	if (it == _connections.end())
-	{
-		return false;
-	}
-
-	it->second.Eof();
-	_connections.erase(socket.GetFileDescriptor());
-	return true;
-}
-
-bool RelayServer::OnDataAvailable(TcpSocket &socket)
-{
-	auto it = _connections.find(socket.GetFileDescriptor());
-	if (it == _connections.end())
-	{
-		return false;
-	}
-
-	char data[1024];
-	ssize_t count = socket.Read(data, sizeof(data));
-	if (count > 0)
-	{
-		it->second.DataReceived(data, static_cast<size_t>(count));
-	}
-	return true;
-}
-
-bool RelayServer::OnServerDataReceived(const epoll_event &ev)
-{
-	std::array<char, 102400> buf;
-	if (read(_clientSocket, buf.data(), buf.size()) <= 0)
-	{
-		return false;
-	}
-
-	return true;
 }
