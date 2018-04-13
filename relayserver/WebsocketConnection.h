@@ -14,4 +14,6 @@ class WebsocketConnection
 		uWS::WebSocket<uWS::SERVER> *_websocket;
 		bool _firstFrameSent = false;
 
+		void sendInitialData(const TcpProtocol& proto);
+
 };

@@ -7,6 +7,8 @@
 #include <iostream>
 
 TcpProtocol::TcpProtocol()
+	: _food(_worldUpdate.food)
+	, _bots(_worldUpdate.bots)
 {
 	_buf.resize(BUFFER_SIZE);
 }
@@ -41,50 +43,6 @@ bool TcpProtocol::Read(int socket)
 	std::copy(_buf.begin()+_bufHead, _buf.begin()+_bufTail, _buf.begin());
 	_bufTail -= _bufHead;
 	_bufHead = 0;
-	return true;
-}
-
-const MsgPackProtocol::GameInfoMessage &TcpProtocol::GetGameInfo() const
-{
-	return _gameInfo;
-}
-
-bool TcpProtocol::GetWorldUpdate(msgpack::sbuffer &buf) const
-{
-	MsgPackProtocol::WorldUpdateMessage msg;
-	msg.bots = _bots;
-	msg.food = _foodVect;
-	msgpack::pack(buf, msg);
-	return true;
-}
-
-bool TcpProtocol::GetFoodSpawnMessages(msgpack::sbuffer &buf) const
-{
-	for (auto& msg: _foodSpawnMessages)
-	{
-		msgpack::pack(buf, msg);
-		// FIXME this will fail with multiple foodSpawnMessages, since only one message should be in one buffer
-	}
-	return true;
-}
-
-bool TcpProtocol::GetFoodConsumeMessages(msgpack::sbuffer &buf) const
-{
-	for (auto& msg: _foodConsumeMessages)
-	{
-		msgpack::pack(buf, msg);
-		// FIXME this will fail with multiple foodSpawnMessages, since only one message should be in one buffer
-	}
-	return true;
-}
-
-bool TcpProtocol::GetFoodDecayMessages(msgpack::sbuffer &buf) const
-{
-	for (auto& msg: _foodDecayMessages)
-	{
-		msgpack::pack(buf, msg);
-		// FIXME this will fail with multiple foodSpawnMessages, since only one message should be in one buffer
-	}
 	return true;
 }
 
@@ -151,27 +109,25 @@ void TcpProtocol::OnGameInfoReceived(const MsgPackProtocol::GameInfoMessage& msg
 void TcpProtocol::OnWorldUpdateReceived(const MsgPackProtocol::WorldUpdateMessage &msg)
 {
 	_bots = msg.bots;
-	_foodVect = msg.food;
+	_food = msg.food;
 }
 
 void TcpProtocol::OnTickReceived(const MsgPackProtocol::TickMessage &msg)
 {
 	_frameCompleteCallback(msg.frame_id);
-	_foodSpawnMessages.clear();
-	_foodConsumeMessages.clear();
-	_foodDecayMessages.clear();
+	_pendingMessages.clear();
 }
 
 void TcpProtocol::OnFoodSpawnReceived(const MsgPackProtocol::FoodSpawnMessage& msg)
 {
-	_foodSpawnMessages.push_back(msg);
-	_foodVect.insert(_foodVect.end(), msg.new_food.begin(), msg.new_food.end());
+	_pendingMessages.push_back(std::make_unique<MsgPackProtocol::FoodSpawnMessage>(msg));
+	_food.insert(_food.end(), msg.new_food.begin(), msg.new_food.end());
 }
 
 void TcpProtocol::OnFoodConsumedReceived(const MsgPackProtocol::FoodConsumeMessage &msg)
 {
-	_foodConsumeMessages.push_back(msg);
-	_foodVect.erase(std::remove_if(_foodVect.begin(), _foodVect.end(), [&msg](const FoodItem& food) {
+	_pendingMessages.push_back(std::make_unique<MsgPackProtocol::FoodConsumeMessage>(msg));
+	_food.erase(std::remove_if(_food.begin(), _food.end(), [&msg](const FoodItem& food) {
 		for (auto& item: msg.items)
 		{
 			if (food.guid == item.food_id)
@@ -185,24 +141,27 @@ void TcpProtocol::OnFoodConsumedReceived(const MsgPackProtocol::FoodConsumeMessa
 
 void TcpProtocol::OnFoodDecayedReceived(const MsgPackProtocol::FoodDecayMessage &msg)
 {
-	_foodDecayMessages.push_back(msg);
-	_foodVect.erase(std::remove_if(_foodVect.begin(), _foodVect.end(), [&msg](const FoodItem& food) {
+	_pendingMessages.push_back(std::make_unique<MsgPackProtocol::FoodDecayMessage>(msg));
+	_food.erase(std::remove_if(_food.begin(), _food.end(), [&msg](const FoodItem& food) {
 		return std::find(msg.food_ids.begin(), msg.food_ids.end(), food.guid) != msg.food_ids.end();
 	}));
 }
 
 void TcpProtocol::OnBotSpawnReceived(const MsgPackProtocol::BotSpawnMessage &msg)
 {
+	_pendingMessages.push_back(std::make_unique<MsgPackProtocol::BotSpawnMessage>(msg));
 	_bots.push_back(msg.bot);
 }
 
 void TcpProtocol::OnBotKillReceived(const MsgPackProtocol::BotKillMessage& msg)
 {
+	_pendingMessages.push_back(std::make_unique<MsgPackProtocol::BotKillMessage>(msg));
 	_bots.erase(std::remove_if(_bots.begin(), _bots.end(), [msg](const BotItem& bot) { return bot.guid == msg.victim_id; }));
 }
 
 void TcpProtocol::OnBotMoveReceived(const MsgPackProtocol::BotMoveMessage &msg)
 {
+	_pendingMessages.push_back(std::make_unique<MsgPackProtocol::BotMoveMessage>(msg));
 	for (auto& item: msg.items)
 	{
 		auto it = std::find_if(_bots.begin(), _bots.end(), [item](const BotItem& bot) { return bot.guid == item.bot_id; });

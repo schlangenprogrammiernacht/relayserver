@@ -9,28 +9,30 @@ WebsocketConnection::WebsocketConnection(uWS::WebSocket<uWS::SERVER> *websocket)
 
 void WebsocketConnection::FrameComplete(uint64_t frame_id, const TcpProtocol &proto)
 {
+	(void) frame_id;
 	if (!_firstFrameSent)
 	{
-		msgpack::sbuffer buf;
-		msgpack::pack(buf, proto.GetGameInfo());
-		_websocket->send(buf.data(), buf.size(), uWS::OpCode::BINARY);
-
-		buf.clear();
-		proto.GetWorldUpdate(buf);
-		_websocket->send(buf.data(), buf.size(), uWS::OpCode::BINARY);
-
+		sendInitialData(proto);
 		_firstFrameSent = true;
 	}
-	else
+
+	msgpack::sbuffer buf;
+	for (auto& msg: proto.GetPendingMessages())
 	{
-		msgpack::sbuffer buf;
-		proto.GetFoodSpawnMessages(buf);
-		_websocket->send(buf.data(), buf.size(), uWS::OpCode::BINARY);
 		buf.clear();
-		proto.GetFoodConsumeMessages(buf);
-		_websocket->send(buf.data(), buf.size(), uWS::OpCode::BINARY);
-		buf.clear();
-		proto.GetFoodDecayMessages(buf);
+		msg->pack(buf);
 		_websocket->send(buf.data(), buf.size(), uWS::OpCode::BINARY);
 	}
+}
+
+void WebsocketConnection::sendInitialData(const TcpProtocol &proto)
+{
+	msgpack::sbuffer buf;
+	buf.clear();
+	proto.GetGameInfo().pack(buf);
+	_websocket->send(buf.data(), buf.size(), uWS::OpCode::BINARY);
+
+	buf.clear();
+	proto.GetWorldUpdate().pack(buf);
+	_websocket->send(buf.data(), buf.size(), uWS::OpCode::BINARY);
 }

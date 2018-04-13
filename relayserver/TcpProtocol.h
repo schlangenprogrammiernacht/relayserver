@@ -21,11 +21,10 @@ class TcpProtocol
 		void SetFrameCompleteCallback(FrameCompleteCallback callback);
 		bool Read(int socket);
 
-		const MsgPackProtocol::GameInfoMessage& GetGameInfo() const;
-		bool GetWorldUpdate(msgpack::sbuffer& buf) const;
-		bool GetFoodSpawnMessages(msgpack::sbuffer& buf) const;
-		bool GetFoodConsumeMessages(msgpack::sbuffer& buf) const;
-		bool GetFoodDecayMessages(msgpack::sbuffer& buf) const;
+		const MsgPackProtocol::GameInfoMessage& GetGameInfo() const { return _gameInfo; }
+		const MsgPackProtocol::WorldUpdateMessage& GetWorldUpdate() const { return _worldUpdate; }
+
+		const std::vector<std::unique_ptr<MsgPackProtocol::Message>>& GetPendingMessages() const { return _pendingMessages; }
 
 	private:
 		static constexpr const size_t SPATIAL_MAP_TILES_X = 128;
@@ -41,16 +40,15 @@ class TcpProtocol
 		size_t _bufTail=0;
 
 		FrameCompleteCallback _frameCompleteCallback;
-		std::vector<FoodItem> _foodVect;
-		std::unique_ptr<FoodMap> _foodMap;
 		MsgPackProtocol::GameInfoMessage _gameInfo;
+		MsgPackProtocol::WorldUpdateMessage _worldUpdate;
+		std::vector<FoodItem>& _food;
+		std::vector<BotItem>& _bots;
+		std::unique_ptr<FoodMap> _foodMap;
+		std::vector<std::unique_ptr<MsgPackProtocol::Message>> _pendingMessages;
 
-		std::vector<MsgPackProtocol::FoodSpawnMessage> _foodSpawnMessages;
-		std::vector<MsgPackProtocol::FoodConsumeMessage> _foodConsumeMessages;
-		std::vector<MsgPackProtocol::FoodDecayMessage> _foodDecayMessages;
-
-		std::vector<BotItem> _bots;
 		std::unique_ptr<SnakeSegmentMap> _segments;
+
 
 		void OnMessageReceived(const char *data, size_t count);
 

@@ -52,32 +52,43 @@ namespace MsgPackProtocol
 		std::vector<uint32_t> color;
 	};
 
-	struct GameInfoMessage
+	struct Message
+	{
+		virtual ~Message() = default;
+		virtual void pack(msgpack::sbuffer& buf) const = 0;
+	};
+
+	struct GameInfoMessage : public Message
 	{
 		double world_size_x = 0;
 		double world_size_y = 0;
 		double food_decay_per_frame = 0;
+		void pack(msgpack::sbuffer& buf) const override { msgpack::pack(buf, *this); }
 	};
 
-	struct PlayerInfoMessage
+	struct PlayerInfoMessage : public Message
 	{
 		guid_t player_id; // id der von dieser Verbindung gesteuerten Schlange
+		void pack(msgpack::sbuffer& buf) const override { msgpack::pack(buf, *this); }
 	};
 
-	struct TickMessage
+	struct TickMessage : public Message
 	{
 		guid_t frame_id; // frame counter since start of server
+		void pack(msgpack::sbuffer& buf) const override { msgpack::pack(buf, *this); }
 	};
 
-	struct WorldUpdateMessage
+	struct WorldUpdateMessage : public Message
 	{
 		std::vector<BotItem> bots;
 		std::vector<FoodItem> food;
+		void pack(msgpack::sbuffer& buf) const override { msgpack::pack(buf, *this); }
 	};
 
-	struct BotSpawnMessage
+	struct BotSpawnMessage : public Message
 	{
 		BotItem bot;
+		void pack(msgpack::sbuffer& buf) const override { msgpack::pack(buf, *this); }
 	};
 
 	struct BotMoveItem
@@ -88,20 +99,23 @@ namespace MsgPackProtocol
 		real_t current_segment_radius;
 	};
 
-	struct BotMoveMessage
+	struct BotMoveMessage : public Message
 	{
 		std::vector<BotMoveItem> items;
+		void pack(msgpack::sbuffer& buf) const override { msgpack::pack(buf, *this); }
 	};
 
-	struct BotKillMessage
+	struct BotKillMessage : public Message
 	{
 		guid_t killer_id;
 		guid_t victim_id; // victim is deleted in this frame
+		void pack(msgpack::sbuffer& buf) const override { msgpack::pack(buf, *this); }
 	};
 
-	struct FoodSpawnMessage
+	struct FoodSpawnMessage : public Message
 	{
 		std::vector<FoodItem> new_food;
+		void pack(msgpack::sbuffer& buf) const override { msgpack::pack(buf, *this); }
 	};
 
 	struct FoodConsumeItem
@@ -110,14 +124,16 @@ namespace MsgPackProtocol
 		guid_t bot_id; // bot consuming the food
 	};
 
-	struct FoodConsumeMessage
+	struct FoodConsumeMessage : public Message
 	{
 		std::vector<FoodConsumeItem> items;
+		void pack(msgpack::sbuffer& buf) const override { msgpack::pack(buf, *this); }
 	};
 
-	struct FoodDecayMessage
+	struct FoodDecayMessage : public Message
 	{
 		std::vector<guid_t> food_ids; // food is deleted in this frame
+		void pack(msgpack::sbuffer& buf) const override { msgpack::pack(buf, *this); }
 	};
 
 }

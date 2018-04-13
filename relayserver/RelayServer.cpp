@@ -32,7 +32,7 @@ int RelayServer::Run()
 					con->FrameComplete(frame_id, _tcpProtocol);
 				}
 			);
-			std::cout << "frame " << frame_id << " complete." << std::endl;
+			//std::cout << "frame " << frame_id << " complete." << std::endl;
 		}
 	);
 	epoll.AddFileDescriptor(_clientSocket, EPOLLIN|EPOLLPRI|EPOLLERR);
