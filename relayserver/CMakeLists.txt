@@ -7,7 +7,8 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 include_directories(
 	${PROJECT_NAME}
 	../lib/uWebSockets/src
-	../lib/msgpack-c/include/
+	../lib/msgpack-c/include
+	../lib/nlohmann/single_include
 )
 
 add_executable(
@@ -15,7 +16,9 @@ add_executable(
 	main.cpp
 	RelayServer.h RelayServer.cpp
 	TcpProtocol.h TcpProtocol.cpp
-	SpatialMap.h MsgPackProtocol.h
+	SpatialMap.h
+	MsgPackProtocol.h MsgPackProtocol.cpp
+	JsonProtocol.h JsonProtocol.cpp
 	WebsocketConnection.h WebsocketConnection.cpp
 )
 

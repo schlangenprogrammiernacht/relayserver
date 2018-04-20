@@ -2,12 +2,11 @@
 
 #include <vector>
 #include <msgpack.hpp>
-
 #include "types.h"
 
 namespace MsgPackProtocol
 {
-	enum
+	typedef enum
 	{
 		MESSAGE_TYPE_GAME_INFO = 0x00,
 		MESSAGE_TYPE_WORLD_UPDATE = 0x01,
@@ -23,7 +22,7 @@ namespace MsgPackProtocol
 		MESSAGE_TYPE_FOOD_DECAY = 0x32,
 
 		MESSAGE_TYPE_PLAYER_INFO = 0xF0,
-	};
+	} MessageType;
 
 	static constexpr const uint8_t PROTOCOL_VERSION = 1;
 
@@ -54,8 +53,9 @@ namespace MsgPackProtocol
 
 	struct Message
 	{
+		MessageType messageType;
+		Message(MessageType type) : messageType(type) {}
 		virtual ~Message() = default;
-		virtual void pack(msgpack::sbuffer& buf) const = 0;
 	};
 
 	struct GameInfoMessage : public Message
@@ -63,32 +63,32 @@ namespace MsgPackProtocol
 		double world_size_x = 0;
 		double world_size_y = 0;
 		double food_decay_per_frame = 0;
-		void pack(msgpack::sbuffer& buf) const override { msgpack::pack(buf, *this); }
+		GameInfoMessage(): Message(MESSAGE_TYPE_GAME_INFO) {}
 	};
 
 	struct PlayerInfoMessage : public Message
 	{
 		guid_t player_id; // id der von dieser Verbindung gesteuerten Schlange
-		void pack(msgpack::sbuffer& buf) const override { msgpack::pack(buf, *this); }
+		PlayerInfoMessage(): Message(MESSAGE_TYPE_PLAYER_INFO) {}
 	};
 
 	struct TickMessage : public Message
 	{
 		guid_t frame_id; // frame counter since start of server
-		void pack(msgpack::sbuffer& buf) const override { msgpack::pack(buf, *this); }
+		TickMessage(): Message(MESSAGE_TYPE_TICK) {}
 	};
 
 	struct WorldUpdateMessage : public Message
 	{
 		std::vector<BotItem> bots;
 		std::vector<FoodItem> food;
-		void pack(msgpack::sbuffer& buf) const override { msgpack::pack(buf, *this); }
+		WorldUpdateMessage(): Message(MESSAGE_TYPE_WORLD_UPDATE) {}
 	};
 
 	struct BotSpawnMessage : public Message
 	{
 		BotItem bot;
-		void pack(msgpack::sbuffer& buf) const override { msgpack::pack(buf, *this); }
+		BotSpawnMessage(): Message(MESSAGE_TYPE_BOT_SPAWN) {}
 	};
 
 	struct BotMoveItem
@@ -102,20 +102,20 @@ namespace MsgPackProtocol
 	struct BotMoveMessage : public Message
 	{
 		std::vector<BotMoveItem> items;
-		void pack(msgpack::sbuffer& buf) const override { msgpack::pack(buf, *this); }
+		BotMoveMessage(): Message(MESSAGE_TYPE_BOT_MOVE) {}
 	};
 
 	struct BotKillMessage : public Message
 	{
 		guid_t killer_id;
 		guid_t victim_id; // victim is deleted in this frame
-		void pack(msgpack::sbuffer& buf) const override { msgpack::pack(buf, *this); }
+		BotKillMessage(): Message(MESSAGE_TYPE_BOT_KILL) {}
 	};
 
 	struct FoodSpawnMessage : public Message
 	{
 		std::vector<FoodItem> new_food;
-		void pack(msgpack::sbuffer& buf) const override { msgpack::pack(buf, *this); }
+		FoodSpawnMessage(): Message(MESSAGE_TYPE_FOOD_SPAWN) {}
 	};
 
 	struct FoodConsumeItem
@@ -127,15 +127,16 @@ namespace MsgPackProtocol
 	struct FoodConsumeMessage : public Message
 	{
 		std::vector<FoodConsumeItem> items;
-		void pack(msgpack::sbuffer& buf) const override { msgpack::pack(buf, *this); }
+		FoodConsumeMessage(): Message(MESSAGE_TYPE_FOOD_CONSUME) {}
 	};
 
 	struct FoodDecayMessage : public Message
 	{
 		std::vector<guid_t> food_ids; // food is deleted in this frame
-		void pack(msgpack::sbuffer& buf) const override { msgpack::pack(buf, *this); }
+		FoodDecayMessage(): Message(MESSAGE_TYPE_FOOD_DECAY) {}
 	};
 
+	void pack(msgpack::sbuffer& buf, const Message& msg);
 }
 
 namespace msgpack {

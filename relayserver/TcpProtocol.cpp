@@ -19,7 +19,7 @@ void TcpProtocol::SetFrameCompleteCallback(TcpProtocol::FrameCompleteCallback ca
 }
 
 bool TcpProtocol::Read(int socket)
-{
+{	
 	ssize_t bytesRead = read(socket, &_buf[_bufTail], _buf.size()-_bufTail);
 
 	if (bytesRead<=0) { return false; }
@@ -82,8 +82,12 @@ void TcpProtocol::OnMessageReceived(const char* data, size_t count)
 			break;
 
 		case MsgPackProtocol::MESSAGE_TYPE_BOT_MOVE:
-			OnBotMoveReceived(obj.get().as<MsgPackProtocol::BotMoveMessage>());
+		{
+			auto msg = std::make_unique<MsgPackProtocol::BotMoveMessage>();
+			obj.get().convert(*msg);
+			OnBotMoveReceived(std::move(msg));
 			break;
+		}
 
 		case MsgPackProtocol::MESSAGE_TYPE_FOOD_SPAWN:
 			OnFoodSpawnReceived(obj.get().as<MsgPackProtocol::FoodSpawnMessage>());
@@ -101,15 +105,16 @@ void TcpProtocol::OnMessageReceived(const char* data, size_t count)
 
 void TcpProtocol::OnGameInfoReceived(const MsgPackProtocol::GameInfoMessage& msg)
 {
-	_segments = std::make_unique<SnakeSegmentMap>(msg.world_size_x, msg.world_size_y, 1000);
-	_foodMap = std::make_unique<FoodMap>(msg.world_size_x, msg.world_size_y, 1000);
+	//_segments = std::make_unique<SnakeSegmentMap>(msg.world_size_x, msg.world_size_y, 1000);
+	//_foodMap = std::make_unique<FoodMap>(msg.world_size_x, msg.world_size_y, 1000);
 	_gameInfo = msg;
 }
 
 void TcpProtocol::OnWorldUpdateReceived(const MsgPackProtocol::WorldUpdateMessage &msg)
 {
-	_bots = msg.bots;
-	_food = msg.food;
+	_worldUpdate = msg;
+	_bots = _worldUpdate.bots;
+	_food = _worldUpdate.food;
 }
 
 void TcpProtocol::OnTickReceived(const MsgPackProtocol::TickMessage &msg)
@@ -151,6 +156,7 @@ void TcpProtocol::OnBotSpawnReceived(const MsgPackProtocol::BotSpawnMessage &msg
 {
 	_pendingMessages.push_back(std::make_unique<MsgPackProtocol::BotSpawnMessage>(msg));
 	_bots.push_back(msg.bot);
+	_bots.back().segments.reserve(100);
 }
 
 void TcpProtocol::OnBotKillReceived(const MsgPackProtocol::BotKillMessage& msg)
@@ -159,10 +165,9 @@ void TcpProtocol::OnBotKillReceived(const MsgPackProtocol::BotKillMessage& msg)
 	_bots.erase(std::remove_if(_bots.begin(), _bots.end(), [msg](const BotItem& bot) { return bot.guid == msg.victim_id; }));
 }
 
-void TcpProtocol::OnBotMoveReceived(const MsgPackProtocol::BotMoveMessage &msg)
+void TcpProtocol::OnBotMoveReceived(std::unique_ptr<MsgPackProtocol::BotMoveMessage> msg)
 {
-	_pendingMessages.push_back(std::make_unique<MsgPackProtocol::BotMoveMessage>(msg));
-	for (auto& item: msg.items)
+	for (auto& item: msg->items)
 	{
 		auto it = std::find_if(_bots.begin(), _bots.end(), [item](const BotItem& bot) { return bot.guid == item.bot_id; });
 		if (it == _bots.end()) { return; }
@@ -172,5 +177,6 @@ void TcpProtocol::OnBotMoveReceived(const MsgPackProtocol::BotMoveMessage &msg)
 		bot.segments.resize(item.current_length);
 		bot.segment_radius = item.current_segment_radius;
 	}
+	_pendingMessages.push_back(std::move(msg));
 }
 

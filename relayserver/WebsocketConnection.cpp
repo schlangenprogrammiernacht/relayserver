@@ -1,6 +1,7 @@
 #include "WebsocketConnection.h"
 #include "TcpProtocol.h"
 #include "MsgPackProtocol.h"
+#include "JsonProtocol.h"
 
 WebsocketConnection::WebsocketConnection(uWS::WebSocket<uWS::SERVER> *websocket)
 	: _websocket(websocket)
@@ -19,20 +20,17 @@ void WebsocketConnection::FrameComplete(uint64_t frame_id, const TcpProtocol &pr
 	msgpack::sbuffer buf;
 	for (auto& msg: proto.GetPendingMessages())
 	{
-		buf.clear();
-		msg->pack(buf);
-		_websocket->send(buf.data(), buf.size(), uWS::OpCode::BINARY);
+		sendString(json(*msg).dump());
 	}
 }
 
 void WebsocketConnection::sendInitialData(const TcpProtocol &proto)
 {
-	msgpack::sbuffer buf;
-	buf.clear();
-	proto.GetGameInfo().pack(buf);
-	_websocket->send(buf.data(), buf.size(), uWS::OpCode::BINARY);
+	sendString(json(proto.GetGameInfo()).dump());
+	sendString(json(proto.GetWorldUpdate()).dump());
+}
 
-	buf.clear();
-	proto.GetWorldUpdate().pack(buf);
-	_websocket->send(buf.data(), buf.size(), uWS::OpCode::BINARY);
+void WebsocketConnection::sendString(std::string data)
+{
+	_websocket->send(data.data(), data.length(), uWS::OpCode::TEXT);
 }

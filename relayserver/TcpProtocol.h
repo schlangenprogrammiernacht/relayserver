@@ -44,11 +44,10 @@ class TcpProtocol
 		MsgPackProtocol::WorldUpdateMessage _worldUpdate;
 		std::vector<FoodItem>& _food;
 		std::vector<BotItem>& _bots;
-		std::unique_ptr<FoodMap> _foodMap;
 		std::vector<std::unique_ptr<MsgPackProtocol::Message>> _pendingMessages;
 
-		std::unique_ptr<SnakeSegmentMap> _segments;
-
+		//std::unique_ptr<FoodMap> _foodMap;
+		//std::unique_ptr<SnakeSegmentMap> _segments;
 
 		void OnMessageReceived(const char *data, size_t count);
 
@@ -62,5 +61,5 @@ class TcpProtocol
 
 		void OnBotSpawnReceived(const MsgPackProtocol::BotSpawnMessage& msg);
 		void OnBotKillReceived(const MsgPackProtocol::BotKillMessage &msg);
-		void OnBotMoveReceived(const MsgPackProtocol::BotMoveMessage &msg);
+		void OnBotMoveReceived(std::unique_ptr<MsgPackProtocol::BotMoveMessage> msg);
 };
