@@ -1,12 +1,12 @@
 [submodule "lib/TcpServer"]
 	path = lib/TcpServer
-	url = git@git.bingo-ev.de:GPN18Programmierspiel/TcpServer.git
+	url = ../TcpServer.git
 [submodule "lib/msgpack-c"]
 	path = lib/msgpack-c
 	url = https://github.com/msgpack/msgpack-c.git
 [submodule "lib/uWebSockets"]
 	path = lib/uWebSockets
-	url = git@git.bingo-ev.de:GPN18Programmierspiel/uWebSockets.git
+	url = ../uWebSockets.git
 	branch = cmake
 [submodule "lib/nlohmann"]
 	path = lib/nlohmann
