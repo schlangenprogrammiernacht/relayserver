@@ -12,4 +12,13 @@ class RelayServer
 	private:
 		int _clientSocket;
 		TcpProtocol _tcpProtocol;
+
+		static constexpr const char* ENV_GAMESERVER_HOST = "GAMESERVER_HOST";
+		static constexpr const char* ENV_GAMESERVER_HOST_DEFAULT = "localhost";
+		static constexpr const char* ENV_GAMESERVER_PORT = "GAMESERVER_PORT";
+		static constexpr const char* ENV_GAMESERVER_PORT_DEFAULT = "9010";
+		static constexpr const char* ENV_WEBSOCKET_PORT = "WEBSOCKET_PORT";
+		static constexpr const char* ENV_WEBSOCKET_PORT_DEFAULT = "9009";
+		static int connectTcpSocket(const char* hostname, const char* port);
+		static const char* getEnvOrDefault(const char* envVar, const char* defaultValue);
 };
