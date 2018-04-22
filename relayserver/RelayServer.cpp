@@ -70,14 +70,16 @@ int RelayServer::Run()
 	}
 
 	epoll.AddFileDescriptor(h.getLoop()->getEpollFd(), EPOLLIN|EPOLLPRI|EPOLLERR|EPOLLRDHUP|EPOLLHUP); // TODO check which events are neccessary
-	while (true)
+	bool shouldRun = true;
+	while (shouldRun)
 	{
 		epoll.Poll(1000,
-			[this, &h](const epoll_event& ev)
+			[this, &h, &shouldRun](const epoll_event& ev)
 			{
 				if (ev.data.fd == _clientSocket)
 				{
-					return _tcpProtocol.Read(_clientSocket);
+					shouldRun = _tcpProtocol.Read(_clientSocket);
+					return shouldRun;
 				}
 				else
 				{
@@ -87,6 +89,8 @@ int RelayServer::Run()
 			}
 		);
 	}
+
+	return -2;
 }
 
 int RelayServer::connectTcpSocket(const char *hostname, const char *port)
