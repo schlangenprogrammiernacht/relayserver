@@ -491,7 +491,7 @@ namespace msgpack {
 			{
 				template <typename Stream> msgpack::packer<Stream>& operator()(msgpack::packer<Stream>& o, MsgPackProtocol::BotItem const& v) const
 				{
-					o.pack_array(5);
+					o.pack_array(6);
 					o.pack(v.guid);
 					o.pack(v.name);
 					o.pack(v.segment_radius);
@@ -504,6 +504,8 @@ namespace msgpack {
 					o.pack(0xFF0000);
 					o.pack(0x00FF00);
 					o.pack(0x0000FF);
+
+					o.pack(v.database_id);
 
 					return o;
 				}
