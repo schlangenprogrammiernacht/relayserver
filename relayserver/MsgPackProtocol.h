@@ -49,6 +49,7 @@ namespace MsgPackProtocol
 		real_t segment_radius;
 		std::vector<SnakeSegmentItem> segments;
 		std::vector<uint32_t> color;
+		int database_id;
 	};
 
 	struct Message
@@ -513,12 +514,13 @@ namespace msgpack {
 				msgpack::object const& operator()(msgpack::object const& o, MsgPackProtocol::BotItem& v) const
 				{
 					if (o.type != msgpack::type::ARRAY) throw msgpack::type_error();
-					if (o.via.array.size != 5) throw msgpack::type_error();
+					if (o.via.array.size != 6) throw msgpack::type_error();
 					o.via.array.ptr[0] >> v.guid;
 					o.via.array.ptr[1] >> v.name;
 					o.via.array.ptr[2] >> v.segment_radius;
 					o.via.array.ptr[3] >> v.segments;
 					o.via.array.ptr[4] >> v.color;
+					o.via.array.ptr[5] >> v.database_id;
 					for (auto &segmentItem: v.segments)
 					{
 						segmentItem.bot_id = v.guid;

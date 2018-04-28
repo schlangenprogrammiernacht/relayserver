@@ -72,6 +72,7 @@ void MsgPackProtocol::to_json(nlohmann::json &j, const MsgPackProtocol::BotItem 
 {
 	j = json {
 		{"id", item.guid},
+		{"db_id", item.database_id},
 		{"name", item.name},
 		{"segment_radius", item.segment_radius},
 		{"color", item.color},
