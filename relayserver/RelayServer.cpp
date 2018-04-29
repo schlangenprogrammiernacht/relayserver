@@ -1,6 +1,9 @@
 #include "RelayServer.h"
 #include <iostream>
+#include <string>
 #include <TcpServer/EPoll.h>
+#include <nlohmann/json.hpp>
+using nlohmann::json;
 
 RelayServer::RelayServer()
 {
@@ -35,11 +38,11 @@ int RelayServer::Run()
 					con->FrameComplete(frame_id, _tcpProtocol);
 
 					auto key = con->getViewerKey();
-					//if (key!=0) TODO implement
+					if (key!=0)
 					{
 						for (auto& item: logMessages)
 						{
-							//if (item->viewer_key == key) // TODO implement
+							if (item.viewer_key == key)
 							{
 								con->LogMessage(frame_id, item.message);
 							}
@@ -68,8 +71,23 @@ int RelayServer::Run()
 	);
 
 	h.onMessage([](uWS::WebSocket<uWS::SERVER> *ws, char *message, size_t length, uWS::OpCode opCode)
-	{
-		//ws->send(message, length, opCode);
+	{	
+		auto *con = static_cast<WebsocketConnection*>(ws->getUserData());
+
+		if (length>MAX_CLIENT_MESSAGE_SIZE)
+		{
+			return;
+		}
+
+		std::string s(message, length);
+		json data = json::parse(s, nullptr, false);
+		if (!data.is_object()) { return; }
+
+		if (data["viewer_key"].is_string())
+		{
+			std::string key = data["viewer_key"];
+			con->setViewerKey(static_cast<uint64_t>(std::stol(key)));
+		}
 	});
 
 	std::string response = "Hello!";

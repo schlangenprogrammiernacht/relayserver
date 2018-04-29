@@ -19,6 +19,7 @@ class RelayServer
 		static constexpr const char* ENV_GAMESERVER_PORT_DEFAULT = "9010";
 		static constexpr const char* ENV_WEBSOCKET_PORT = "WEBSOCKET_PORT";
 		static constexpr const char* ENV_WEBSOCKET_PORT_DEFAULT = "9009";
+		static constexpr const size_t MAX_CLIENT_MESSAGE_SIZE = 10*1024;
 		static int connectTcpSocket(const char* hostname, const char* port);
 		static const char* getEnvOrDefault(const char* envVar, const char* defaultValue);
 };
