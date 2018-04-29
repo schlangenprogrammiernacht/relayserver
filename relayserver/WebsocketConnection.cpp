@@ -24,6 +24,12 @@ void WebsocketConnection::FrameComplete(uint64_t frame_id, const TcpProtocol &pr
 	}
 }
 
+void WebsocketConnection::LogMessage(uint64_t frame_id, const std::string &message)
+{
+	json j = { { "t", "Log" }, { "frame", frame_id }, { "msg", message} };
+	sendString(j.dump());
+}
+
 void WebsocketConnection::sendInitialData(const TcpProtocol &proto)
 {
 	sendString(json(proto.GetGameInfo()).dump());

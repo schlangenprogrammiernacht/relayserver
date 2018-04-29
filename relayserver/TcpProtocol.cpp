@@ -89,6 +89,14 @@ void TcpProtocol::OnMessageReceived(const char* data, size_t count)
 			break;
 		}
 
+		case MsgPackProtocol::MESSAGE_TYPE_BOT_LOG:
+		{
+			auto msg = std::make_unique<MsgPackProtocol::BotLogMessage>();
+			obj.get().convert(*msg);
+			OnBotLogReceived(std::move(msg));
+			break;
+		}
+
 		case MsgPackProtocol::MESSAGE_TYPE_FOOD_SPAWN:
 			OnFoodSpawnReceived(obj.get().as<MsgPackProtocol::FoodSpawnMessage>());
 			break;
@@ -178,5 +186,13 @@ void TcpProtocol::OnBotMoveReceived(std::unique_ptr<MsgPackProtocol::BotMoveMess
 		bot.segment_radius = item.current_segment_radius;
 	}
 	_pendingMessages.push_back(std::move(msg));
+}
+
+void TcpProtocol::OnBotLogReceived(std::unique_ptr<MsgPackProtocol::BotLogMessage> msg)
+{
+	for (auto& item: msg->items)
+	{
+		_pendingLogItems.push_back(item);
+	}
 }
 

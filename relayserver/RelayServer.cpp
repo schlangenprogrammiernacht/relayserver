@@ -27,13 +27,27 @@ int RelayServer::Run()
 	_tcpProtocol.SetFrameCompleteCallback(
 		[this, &h](uint64_t frame_id)
 		{
+			auto &logMessages = _tcpProtocol.GetPendingLogItems();
 			h.getDefaultGroup<uWS::SERVER>().forEach(
-				[this, frame_id](uWS::WebSocket<uWS::SERVER>* sock)
+				[this, frame_id, &logMessages](uWS::WebSocket<uWS::SERVER>* sock)
 				{
 					auto con = static_cast<WebsocketConnection*>(sock->getUserData());
 					con->FrameComplete(frame_id, _tcpProtocol);
+
+					auto key = con->getViewerKey();
+					//if (key!=0) TODO implement
+					{
+						for (auto& item: logMessages)
+						{
+							//if (item->viewer_key == key) // TODO implement
+							{
+								con->LogMessage(frame_id, item.message);
+							}
+						}
+					}
 				}
 			);
+			_tcpProtocol.ClearLogItems();
 			//std::cout << "frame " << frame_id << " complete." << std::endl;
 		}
 	);

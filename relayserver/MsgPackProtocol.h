@@ -16,6 +16,7 @@ namespace MsgPackProtocol
 		MESSAGE_TYPE_BOT_SPAWN = 0x20,
 		MESSAGE_TYPE_BOT_KILL = 0x21,
 		MESSAGE_TYPE_BOT_MOVE = 0x22,
+		MESSAGE_TYPE_BOT_LOG = 0x23,
 
 		MESSAGE_TYPE_FOOD_SPAWN = 0x30,
 		MESSAGE_TYPE_FOOD_CONSUME = 0x31,
@@ -50,6 +51,12 @@ namespace MsgPackProtocol
 		std::vector<SnakeSegmentItem> segments;
 		std::vector<uint32_t> color;
 		int database_id;
+	};
+
+	struct BotLogItem
+	{
+		uint64_t viewer_key;
+		std::string message;
 	};
 
 	struct Message
@@ -111,6 +118,12 @@ namespace MsgPackProtocol
 		guid_t killer_id;
 		guid_t victim_id; // victim is deleted in this frame
 		BotKillMessage(): Message(MESSAGE_TYPE_BOT_KILL) {}
+	};
+
+	struct BotLogMessage : public Message
+	{
+		std::vector<BotLogItem> items;
+		BotLogMessage(): Message(MESSAGE_TYPE_BOT_LOG) {}
 	};
 
 	struct FoodSpawnMessage : public Message
@@ -336,6 +349,52 @@ namespace msgpack {
 					if (o.via.array.size != 4) throw msgpack::type_error();
 					o.via.array.ptr[2] >> v.killer_id;
 					o.via.array.ptr[3] >> v.victim_id;
+					return o;
+				}
+			};
+
+			template <> struct pack<MsgPackProtocol::BotLogMessage>
+			{
+				template <typename Stream> msgpack::packer<Stream>& operator()(msgpack::packer<Stream>& o, MsgPackProtocol::BotLogMessage const& v) const
+				{
+					o.pack_array(3);
+					o.pack(MsgPackProtocol::PROTOCOL_VERSION);
+					o.pack(static_cast<int>(MsgPackProtocol::MESSAGE_TYPE_BOT_LOG));
+					o.pack(v.items);
+					return o;
+				}
+			};
+
+			template<> struct convert<MsgPackProtocol::BotLogMessage>
+			{
+				msgpack::object const& operator()(msgpack::object const& o, MsgPackProtocol::BotLogMessage& v) const
+				{
+					if (o.type != msgpack::type::ARRAY) throw msgpack::type_error();
+					if (o.via.array.size != 3) throw msgpack::type_error();
+					o.via.array.ptr[2] >> v.items;
+					return o;
+				}
+			};
+
+			template <> struct pack<MsgPackProtocol::BotLogItem>
+			{
+				template <typename Stream> msgpack::packer<Stream>& operator()(msgpack::packer<Stream>& o, MsgPackProtocol::BotLogItem const& v) const
+				{
+					o.pack_array(2);
+					o.pack(v.viewer_key);
+					o.pack(v.message);
+					return o;
+				}
+			};
+
+			template<> struct convert<MsgPackProtocol::BotLogItem>
+			{
+				msgpack::object const& operator()(msgpack::object const& o, MsgPackProtocol::BotLogItem& v) const
+				{
+					if (o.type != msgpack::type::ARRAY) throw msgpack::type_error();
+					if (o.via.array.size != 2) throw msgpack::type_error();
+					o.via.array.ptr[0] >> v.viewer_key;
+					o.via.array.ptr[1] >> v.message;
 					return o;
 				}
 			};

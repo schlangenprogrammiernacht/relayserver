@@ -25,6 +25,8 @@ class TcpProtocol
 		const MsgPackProtocol::WorldUpdateMessage& GetWorldUpdate() const { return _worldUpdate; }
 
 		const std::vector<std::unique_ptr<MsgPackProtocol::Message>>& GetPendingMessages() const { return _pendingMessages; }
+		const std::vector<MsgPackProtocol::BotLogItem>& GetPendingLogItems() const { return _pendingLogItems; }
+		void ClearLogItems() { _pendingLogItems.clear(); }
 
 	private:
 		static constexpr const size_t SPATIAL_MAP_TILES_X = 128;
@@ -45,9 +47,7 @@ class TcpProtocol
 		std::vector<FoodItem>& _food;
 		std::vector<BotItem>& _bots;
 		std::vector<std::unique_ptr<MsgPackProtocol::Message>> _pendingMessages;
-
-		//std::unique_ptr<FoodMap> _foodMap;
-		//std::unique_ptr<SnakeSegmentMap> _segments;
+		std::vector<MsgPackProtocol::BotLogItem> _pendingLogItems;
 
 		void OnMessageReceived(const char *data, size_t count);
 
@@ -62,4 +62,5 @@ class TcpProtocol
 		void OnBotSpawnReceived(const MsgPackProtocol::BotSpawnMessage& msg);
 		void OnBotKillReceived(const MsgPackProtocol::BotKillMessage &msg);
 		void OnBotMoveReceived(std::unique_ptr<MsgPackProtocol::BotMoveMessage> msg);
+		void OnBotLogReceived(std::unique_ptr<MsgPackProtocol::BotLogMessage> msg);
 };
