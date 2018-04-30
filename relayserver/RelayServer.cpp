@@ -72,21 +72,28 @@ int RelayServer::Run()
 
 	h.onMessage([](uWS::WebSocket<uWS::SERVER> *ws, char *message, size_t length, uWS::OpCode opCode)
 	{	
-		auto *con = static_cast<WebsocketConnection*>(ws->getUserData());
-
 		if (length>MAX_CLIENT_MESSAGE_SIZE)
 		{
+			ws->close(413, "payload to large");
 			return;
 		}
 
-		std::string s(message, length);
-		json data = json::parse(s, nullptr, false);
-		if (!data.is_object()) { return; }
+		try {
+			auto *con = static_cast<WebsocketConnection*>(ws->getUserData());
+			std::string s(message, length);
+			json data = json::parse(s, nullptr, false);
+			if (!data.is_object()) { return; }
 
-		if (data["viewer_key"].is_string())
+			if (data["viewer_key"].is_string())
+			{
+				std::string key = data["viewer_key"];
+				con->setViewerKey(static_cast<uint64_t>(std::stol(key)));
+			}
+		}
+		catch (std::exception e)
 		{
-			std::string key = data["viewer_key"];
-			con->setViewerKey(static_cast<uint64_t>(std::stol(key)));
+			ws->close(418, "invalid request");
+			return;
 		}
 	});
 
