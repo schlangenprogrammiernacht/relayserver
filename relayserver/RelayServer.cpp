@@ -2,8 +2,7 @@
 #include <iostream>
 #include <string>
 #include <TcpServer/EPoll.h>
-#include <nlohmann/json.hpp>
-using nlohmann::json;
+#include "JsonProtocol.h"
 
 RelayServer::RelayServer()
 {
@@ -38,18 +37,22 @@ int RelayServer::Run()
 					con->FrameComplete(frame_id, _tcpProtocol);
 
 					auto key = con->getViewerKey();
-					if (logMessages.find(key) == logMessages.end())
+					if (logMessages.find(key) != logMessages.end())
 					{
-						return;
-					}
-
-					for (auto& item: logMessages.at(key))
-					{
-						con->LogMessage(frame_id, item.message);
+						for (auto& item: logMessages.at(key))
+						{
+							con->LogMessage(frame_id, item.message);
+						}
 					}
 				}
 			);
 			_tcpProtocol.ClearLogItems();
+
+			for (auto& msg: _tcpProtocol.GetPendingMessages())
+			{
+				std::string s = json(*msg).dump();
+				h.getDefaultGroup<uWS::SERVER>().broadcast(s.data(), s.length(), uWS::OpCode::TEXT);
+			}
 		}
 	);
 	epoll.AddFileDescriptor(_clientSocket, EPOLLIN|EPOLLPRI|EPOLLERR);

@@ -16,12 +16,6 @@ void WebsocketConnection::FrameComplete(uint64_t frame_id, const TcpProtocol &pr
 		sendInitialData(proto);
 		_firstFrameSent = true;
 	}
-
-	msgpack::sbuffer buf;
-	for (auto& msg: proto.GetPendingMessages())
-	{
-		sendString(json(*msg).dump());
-	}
 }
 
 void WebsocketConnection::LogMessage(uint64_t frame_id, const std::string &message)
