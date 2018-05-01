@@ -4,6 +4,7 @@
 #include <functional>
 #include <vector>
 #include <memory>
+#include <map>
 #include "SpatialMap.h"
 #include "MsgPackProtocol.h"
 
@@ -25,8 +26,9 @@ class TcpProtocol
 		const MsgPackProtocol::WorldUpdateMessage& GetWorldUpdate() const { return _worldUpdate; }
 
 		const std::vector<std::unique_ptr<MsgPackProtocol::Message>>& GetPendingMessages() const { return _pendingMessages; }
-		const std::vector<MsgPackProtocol::BotLogItem>& GetPendingLogItems() const { return _pendingLogItems; }
-		void ClearLogItems() { _pendingLogItems.clear(); }
+		typedef std::map<uint64_t, std::vector<MsgPackProtocol::BotLogItem>> LogItemMap;
+		const LogItemMap& GetPendingLogItems() const { return _pendingLogItems; }
+		void ClearLogItems();
 
 	private:
 		static constexpr const size_t SPATIAL_MAP_TILES_X = 128;
@@ -34,7 +36,6 @@ class TcpProtocol
 		static constexpr const size_t SPATIAL_MAP_RESERVE_COUNT = 10;
 
 		typedef SpatialMap<FoodItem, SPATIAL_MAP_TILES_X, SPATIAL_MAP_TILES_Y> FoodMap;
-
 		typedef SpatialMap<SnakeSegmentItem, SPATIAL_MAP_TILES_X, SPATIAL_MAP_TILES_Y> SnakeSegmentMap;
 
 		std::vector<char> _buf;
@@ -47,7 +48,8 @@ class TcpProtocol
 		std::vector<FoodItem>& _food;
 		std::vector<BotItem>& _bots;
 		std::vector<std::unique_ptr<MsgPackProtocol::Message>> _pendingMessages;
-		std::vector<MsgPackProtocol::BotLogItem> _pendingLogItems;
+
+		LogItemMap _pendingLogItems;
 
 		void OnMessageReceived(const char *data, size_t count);
 

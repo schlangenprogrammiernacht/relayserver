@@ -46,6 +46,14 @@ bool TcpProtocol::Read(int socket)
 	return true;
 }
 
+void TcpProtocol::ClearLogItems()
+{
+	for (auto &kvp: _pendingLogItems)
+	{
+		_pendingLogItems[kvp.first].clear();
+	}
+}
+
 void TcpProtocol::OnMessageReceived(const char* data, size_t count)
 {
 	msgpack::object_handle obj;
@@ -192,7 +200,6 @@ void TcpProtocol::OnBotLogReceived(std::unique_ptr<MsgPackProtocol::BotLogMessag
 {
 	for (auto& item: msg->items)
 	{
-		_pendingLogItems.push_back(item);
+		_pendingLogItems[item.viewer_key].emplace_back(item);
 	}
 }
-

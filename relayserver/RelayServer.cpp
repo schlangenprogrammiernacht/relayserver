@@ -38,20 +38,18 @@ int RelayServer::Run()
 					con->FrameComplete(frame_id, _tcpProtocol);
 
 					auto key = con->getViewerKey();
-					if (key!=0)
+					if (logMessages.find(key) == logMessages.end())
 					{
-						for (auto& item: logMessages)
-						{
-							if (item.viewer_key == key)
-							{
-								con->LogMessage(frame_id, item.message);
-							}
-						}
+						return;
+					}
+
+					for (auto& item: logMessages.at(key))
+					{
+						con->LogMessage(frame_id, item.message);
 					}
 				}
 			);
 			_tcpProtocol.ClearLogItems();
-			//std::cout << "frame " << frame_id << " complete." << std::endl;
 		}
 	);
 	epoll.AddFileDescriptor(_clientSocket, EPOLLIN|EPOLLPRI|EPOLLERR);
