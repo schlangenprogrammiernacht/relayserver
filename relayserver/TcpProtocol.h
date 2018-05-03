@@ -22,7 +22,8 @@ class TcpProtocol
 		bool Read(int socket);
 
 		const MsgPackProtocol::GameInfoMessage& GetGameInfo() const { return _gameInfo; }
-		const MsgPackProtocol::WorldUpdateMessage& GetWorldUpdate() const { return _worldUpdate; }
+
+		std::unique_ptr<MsgPackProtocol::WorldUpdateMessage> MakeWorldUpdateMessage() const;
 
 		const std::vector<std::unique_ptr<MsgPackProtocol::Message>>& GetPendingMessages() const { return _pendingMessages; }
 		typedef std::map<uint64_t, std::vector<MsgPackProtocol::BotLogItem>> LogItemMap;
@@ -36,9 +37,8 @@ class TcpProtocol
 
 		FrameCompleteCallback _frameCompleteCallback;
 		MsgPackProtocol::GameInfoMessage _gameInfo;
-		MsgPackProtocol::WorldUpdateMessage _worldUpdate;
-		std::vector<FoodItem>& _food;
-		std::vector<BotItem>& _bots;
+		std::vector<FoodItem> _food;
+		std::vector<BotItem> _bots;
 		std::vector<std::unique_ptr<MsgPackProtocol::Message>> _pendingMessages;
 
 		LogItemMap _pendingLogItems;

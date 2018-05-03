@@ -7,8 +7,6 @@
 #include <iostream>
 
 TcpProtocol::TcpProtocol()
-	: _food(_worldUpdate.food)
-	, _bots(_worldUpdate.bots)
 {
 	_buf.resize(BUFFER_SIZE);
 }
@@ -44,6 +42,14 @@ bool TcpProtocol::Read(int socket)
 	_bufTail -= _bufHead;
 	_bufHead = 0;
 	return true;
+}
+
+std::unique_ptr<MsgPackProtocol::WorldUpdateMessage> TcpProtocol::MakeWorldUpdateMessage() const
+{
+	auto result = std::make_unique<MsgPackProtocol::WorldUpdateMessage>();
+	result->food = _food;
+	result->bots = _bots;
+	return result;
 }
 
 void TcpProtocol::ClearLogItems()
@@ -121,16 +127,13 @@ void TcpProtocol::OnMessageReceived(const char* data, size_t count)
 
 void TcpProtocol::OnGameInfoReceived(const MsgPackProtocol::GameInfoMessage& msg)
 {
-	//_segments = std::make_unique<SnakeSegmentMap>(msg.world_size_x, msg.world_size_y, 1000);
-	//_foodMap = std::make_unique<FoodMap>(msg.world_size_x, msg.world_size_y, 1000);
 	_gameInfo = msg;
 }
 
 void TcpProtocol::OnWorldUpdateReceived(const MsgPackProtocol::WorldUpdateMessage &msg)
 {
-	_worldUpdate = msg;
-	_bots = _worldUpdate.bots;
-	_food = _worldUpdate.food;
+	_bots = msg.bots;
+	_food = msg.food;
 }
 
 void TcpProtocol::OnTickReceived(const MsgPackProtocol::TickMessage &msg)

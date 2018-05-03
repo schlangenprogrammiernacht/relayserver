@@ -27,7 +27,7 @@ void WebsocketConnection::LogMessage(uint64_t frame_id, const std::string &messa
 void WebsocketConnection::sendInitialData(const TcpProtocol &proto)
 {
 	sendString(json(proto.GetGameInfo()).dump());
-	sendString(json(proto.GetWorldUpdate()).dump());
+	sendString(json(*proto.MakeWorldUpdateMessage()).dump());
 }
 
 void WebsocketConnection::sendString(std::string data)
