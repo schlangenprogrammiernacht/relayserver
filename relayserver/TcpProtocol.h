@@ -5,7 +5,6 @@
 #include <vector>
 #include <memory>
 #include <map>
-#include "SpatialMap.h"
 #include "MsgPackProtocol.h"
 
 using BotItem = MsgPackProtocol::BotItem;
@@ -31,13 +30,6 @@ class TcpProtocol
 		void ClearLogItems();
 
 	private:
-		static constexpr const size_t SPATIAL_MAP_TILES_X = 128;
-		static constexpr const size_t SPATIAL_MAP_TILES_Y = 128;
-		static constexpr const size_t SPATIAL_MAP_RESERVE_COUNT = 10;
-
-		typedef SpatialMap<FoodItem, SPATIAL_MAP_TILES_X, SPATIAL_MAP_TILES_Y> FoodMap;
-		typedef SpatialMap<SnakeSegmentItem, SPATIAL_MAP_TILES_X, SPATIAL_MAP_TILES_Y> SnakeSegmentMap;
-
 		std::vector<char> _buf;
 		size_t _bufHead=0;
 		size_t _bufTail=0;

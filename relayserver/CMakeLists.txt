@@ -16,7 +16,6 @@ add_executable(
 	main.cpp
 	RelayServer.h RelayServer.cpp
 	TcpProtocol.h TcpProtocol.cpp
-	SpatialMap.h
 	MsgPackProtocol.h MsgPackProtocol.cpp
 	JsonProtocol.h JsonProtocol.cpp
 	WebsocketConnection.h WebsocketConnection.cpp
