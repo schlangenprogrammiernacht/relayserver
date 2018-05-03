@@ -47,8 +47,19 @@ bool TcpProtocol::Read(int socket)
 std::unique_ptr<MsgPackProtocol::WorldUpdateMessage> TcpProtocol::MakeWorldUpdateMessage() const
 {
 	auto result = std::make_unique<MsgPackProtocol::WorldUpdateMessage>();
-	result->food = _food;
-	result->bots = _bots;
+	auto& food = result->food;
+	auto& bots = result->bots;
+
+	food.reserve(_foodMap.size());
+	for (auto& kvp: _foodMap) {
+		food.emplace_back(kvp.second);
+	}
+
+	bots.reserve(_botsMap.size());
+	for (auto& kvp: _botsMap) {
+		bots.emplace_back(kvp.second);
+	}
+
 	return result;
 }
 
@@ -132,8 +143,17 @@ void TcpProtocol::OnGameInfoReceived(const MsgPackProtocol::GameInfoMessage& msg
 
 void TcpProtocol::OnWorldUpdateReceived(const MsgPackProtocol::WorldUpdateMessage &msg)
 {
-	_bots = msg.bots;
-	_food = msg.food;
+	_botsMap.clear();
+	for (auto& bot: msg.bots)
+	{
+		_botsMap.insert(std::make_pair(bot.guid, bot));
+	}
+
+	_foodMap.clear();
+	for (auto& food: msg.food)
+	{
+		_foodMap.insert(std::make_pair(food.guid, food));
+	}
 }
 
 void TcpProtocol::OnTickReceived(const MsgPackProtocol::TickMessage &msg)
@@ -145,56 +165,57 @@ void TcpProtocol::OnTickReceived(const MsgPackProtocol::TickMessage &msg)
 void TcpProtocol::OnFoodSpawnReceived(const MsgPackProtocol::FoodSpawnMessage& msg)
 {
 	_pendingMessages.push_back(std::make_unique<MsgPackProtocol::FoodSpawnMessage>(msg));
-	_food.insert(_food.end(), msg.new_food.begin(), msg.new_food.end());
+	for (auto& item: msg.new_food)
+	{
+		_foodMap.insert(std::make_pair(item.guid, item));
+	}
 }
 
 void TcpProtocol::OnFoodConsumedReceived(const MsgPackProtocol::FoodConsumeMessage &msg)
 {
 	_pendingMessages.push_back(std::make_unique<MsgPackProtocol::FoodConsumeMessage>(msg));
-	_food.erase(std::remove_if(_food.begin(), _food.end(), [&msg](const FoodItem& food) {
-		for (auto& item: msg.items)
-		{
-			if (food.guid == item.food_id)
-			{
-				return true;
-			}
-		}
-		return false;
-	}));
+	for (auto& item: msg.items)
+	{
+		_foodMap.erase(item.food_id);
+	}
 }
 
 void TcpProtocol::OnFoodDecayedReceived(const MsgPackProtocol::FoodDecayMessage &msg)
 {
 	_pendingMessages.push_back(std::make_unique<MsgPackProtocol::FoodDecayMessage>(msg));
-	_food.erase(std::remove_if(_food.begin(), _food.end(), [&msg](const FoodItem& food) {
-		return std::find(msg.food_ids.begin(), msg.food_ids.end(), food.guid) != msg.food_ids.end();
-	}));
+	for (auto& id: msg.food_ids)
+	{
+		_foodMap.erase(id);
+	}
 }
 
 void TcpProtocol::OnBotSpawnReceived(const MsgPackProtocol::BotSpawnMessage &msg)
 {
 	_pendingMessages.push_back(std::make_unique<MsgPackProtocol::BotSpawnMessage>(msg));
-	_bots.push_back(msg.bot);
-	_bots.back().segments.reserve(100);
+	auto result = _botsMap.insert(std::make_pair(msg.bot.guid, msg.bot));
+	(result.first)->second.segments.reserve(100);
 }
 
 void TcpProtocol::OnBotKillReceived(const MsgPackProtocol::BotKillMessage& msg)
 {
 	_pendingMessages.push_back(std::make_unique<MsgPackProtocol::BotKillMessage>(msg));
-	_bots.erase(std::remove_if(_bots.begin(), _bots.end(), [msg](const BotItem& bot) { return bot.guid == msg.victim_id; }));
+	_botsMap.erase(msg.victim_id);
 }
 
 void TcpProtocol::OnBotMoveReceived(std::unique_ptr<MsgPackProtocol::BotMoveMessage> msg)
 {
 	for (auto& item: msg->items)
 	{
-		auto it = std::find_if(_bots.begin(), _bots.end(), [item](const BotItem& bot) { return bot.guid == item.bot_id; });
-		if (it == _bots.end()) { return; }
-		auto& bot = *it;
+		auto it = _botsMap.find(item.bot_id);
+		if (it != _botsMap.end())
+		{
+			auto& bot = it->second;
+			bot.segments.reserve(bot.segments.size() + item.new_segments.size());
+			bot.segments.insert(bot.segments.begin(), item.new_segments.begin(), item.new_segments.end());
+			bot.segments.resize(item.current_length);
+			bot.segment_radius = item.current_segment_radius;
+		}
 
-		bot.segments.insert(bot.segments.begin(), item.new_segments.begin(), item.new_segments.end());
-		bot.segments.resize(item.current_length);
-		bot.segment_radius = item.current_segment_radius;
 	}
 	_pendingMessages.push_back(std::move(msg));
 }

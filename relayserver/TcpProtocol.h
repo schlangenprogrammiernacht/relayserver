@@ -37,8 +37,8 @@ class TcpProtocol
 
 		FrameCompleteCallback _frameCompleteCallback;
 		MsgPackProtocol::GameInfoMessage _gameInfo;
-		std::vector<FoodItem> _food;
-		std::vector<BotItem> _bots;
+		std::map<guid_t,FoodItem> _foodMap;
+		std::map<guid_t,BotItem> _botsMap;
 		std::vector<std::unique_ptr<MsgPackProtocol::Message>> _pendingMessages;
 
 		LogItemMap _pendingLogItems;
