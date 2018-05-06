@@ -71,6 +71,10 @@ namespace MsgPackProtocol
 		double world_size_x = 0;
 		double world_size_y = 0;
 		double food_decay_per_frame = 0;
+		double snake_distance_per_step = 0;
+		double snake_segment_distance_factor = 0;
+		double snake_segment_distance_exponent = 0;
+		double snake_pull_factor = 0;
 		GameInfoMessage(): Message(MESSAGE_TYPE_GAME_INFO) {}
 	};
 
@@ -161,12 +165,16 @@ namespace msgpack {
 			{
 				template <typename Stream> msgpack::packer<Stream>& operator()(msgpack::packer<Stream>& o, MsgPackProtocol::GameInfoMessage const& v) const
 				{
-					o.pack_array(5);
+					o.pack_array(9);
 					o.pack(MsgPackProtocol::PROTOCOL_VERSION);
 					o.pack(static_cast<int>(MsgPackProtocol::MESSAGE_TYPE_GAME_INFO));
 					o.pack(v.world_size_x);
 					o.pack(v.world_size_y);
 					o.pack(v.food_decay_per_frame);
+					o.pack(v.snake_distance_per_step);
+					o.pack(v.snake_segment_distance_factor);
+					o.pack(v.snake_segment_distance_exponent);
+					o.pack(v.snake_pull_factor);
 					return o;
 				}
 			};
@@ -176,10 +184,17 @@ namespace msgpack {
 				msgpack::object const& operator()(msgpack::object const& o, MsgPackProtocol::GameInfoMessage& v) const
 				{
 					if (o.type != msgpack::type::ARRAY) throw msgpack::type_error();
-					if (o.via.array.size != 5) throw msgpack::type_error();
+					if (o.via.array.size < 5) throw msgpack::type_error();
 					o.via.array.ptr[2] >> v.world_size_x;
 					o.via.array.ptr[3] >> v.world_size_y;
 					o.via.array.ptr[4] >> v.food_decay_per_frame;
+					if (o.via.array.size > 5)
+					{
+						o.via.array.ptr[5] >> v.snake_distance_per_step;
+						o.via.array.ptr[6] >> v.snake_segment_distance_factor;
+						o.via.array.ptr[7] >> v.snake_segment_distance_exponent;
+						o.via.array.ptr[8] >> v.snake_pull_factor;
+					}
 					return o;
 				}
 			};

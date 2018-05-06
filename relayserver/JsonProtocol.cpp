@@ -43,7 +43,11 @@ void MsgPackProtocol::to_json(nlohmann::json &j, const MsgPackProtocol::GameInfo
 		{"t", "GameInfo"},
 		{"world_size_x", msg.world_size_x},
 		{"world_size_y", msg.world_size_y},
-		{"food_decay_per_frame", msg.food_decay_per_frame}
+		{"food_decay_per_frame", msg.food_decay_per_frame},
+		{"snake_distance_per_step", msg.snake_distance_per_step},
+		{"snake_segment_distance_factor", msg.snake_segment_distance_factor},
+		{"snake_segment_distance_exponent", msg.snake_segment_distance_exponent},
+		{"snake_pull_factor", msg.snake_pull_factor}
 	};
 }
 
