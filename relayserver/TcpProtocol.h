@@ -57,4 +57,6 @@ class TcpProtocol
 		void OnBotKillReceived(const MsgPackProtocol::BotKillMessage &msg);
 		void OnBotMoveReceived(std::unique_ptr<MsgPackProtocol::BotMoveMessage> msg);
 		void OnBotLogReceived(std::unique_ptr<MsgPackProtocol::BotLogMessage> msg);
+		void OnBotStatsReceived(std::unique_ptr<MsgPackProtocol::BotStatsMessage> msg);
+		void OnBotMoveHeadReceived(std::unique_ptr<MsgPackProtocol::BotMoveHeadMessage> msg);
 };

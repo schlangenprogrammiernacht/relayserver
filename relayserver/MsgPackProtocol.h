@@ -17,6 +17,8 @@ namespace MsgPackProtocol
 		MESSAGE_TYPE_BOT_KILL = 0x21,
 		MESSAGE_TYPE_BOT_MOVE = 0x22,
 		MESSAGE_TYPE_BOT_LOG = 0x23,
+		MESSAGE_TYPE_BOT_STATS = 0x24,
+		MESSAGE_TYPE_BOT_MOVE_HEAD = 0x25,
 
 		MESSAGE_TYPE_FOOD_SPAWN = 0x30,
 		MESSAGE_TYPE_FOOD_CONSUME = 0x31,
@@ -57,6 +59,22 @@ namespace MsgPackProtocol
 	{
 		uint64_t viewer_key;
 		std::string message;
+	};
+
+	struct BotMoveHeadItem
+	{
+		guid_t bot_id;
+		double mass;
+		// one head position for each step moved in this frame, in temporal order
+		std::vector<Vector2D> new_head_positions;
+	};
+
+	struct BotStatsItem
+	{
+		guid_t bot_id;
+		double natural_food_consumed;
+		double carrison_food_consumed;
+		double hunted_food_consumed;
 	};
 
 	struct Message
@@ -128,6 +146,18 @@ namespace MsgPackProtocol
 	{
 		std::vector<BotLogItem> items;
 		BotLogMessage(): Message(MESSAGE_TYPE_BOT_LOG) {}
+	};
+
+	struct BotStatsMessage : public Message
+	{
+		std::vector<BotStatsItem> items;
+		BotStatsMessage(): Message(MESSAGE_TYPE_BOT_STATS) {}
+	};
+
+	struct BotMoveHeadMessage : public Message
+	{
+		std::vector<BotMoveHeadItem> items;
+		BotMoveHeadMessage(): Message(MESSAGE_TYPE_BOT_MOVE_HEAD) {}
 	};
 
 	struct FoodSpawnMessage : public Message
@@ -343,6 +373,79 @@ namespace msgpack {
 				}
 			};
 
+			template <> struct pack<MsgPackProtocol::BotMoveHeadMessage>
+			{
+				template <typename Stream> msgpack::packer<Stream>& operator()(msgpack::packer<Stream>& o, MsgPackProtocol::BotMoveHeadMessage const& v) const
+				{
+					o.pack_array(3);
+					o.pack(MsgPackProtocol::PROTOCOL_VERSION);
+					o.pack(static_cast<int>(MsgPackProtocol::MESSAGE_TYPE_BOT_MOVE_HEAD));
+					o.pack(v.items);
+					return o;
+				}
+			};
+
+			template<> struct convert<MsgPackProtocol::BotMoveHeadMessage>
+			{
+				msgpack::object const& operator()(msgpack::object const& o, MsgPackProtocol::BotMoveHeadMessage& v) const
+				{
+					if (o.type != msgpack::type::ARRAY) throw msgpack::type_error();
+					if (o.via.array.size != 3) throw msgpack::type_error();
+					o.via.array.ptr[2] >> v.items;
+					return o;
+				}
+			};
+
+			template <> struct pack<MsgPackProtocol::BotMoveHeadItem>
+			{
+				template <typename Stream> msgpack::packer<Stream>& operator()(msgpack::packer<Stream>& o, MsgPackProtocol::BotMoveHeadItem const& v) const
+				{
+					o.pack_array(3);
+					o.pack(v.bot_id);
+					o.pack(v.mass);
+					o.pack(v.new_head_positions);
+					return o;
+				}
+			};
+
+			template<> struct convert<MsgPackProtocol::BotMoveHeadItem>
+			{
+				msgpack::object const& operator()(msgpack::object const& o, MsgPackProtocol::BotMoveHeadItem& v) const
+				{
+					if (o.type != msgpack::type::ARRAY) throw msgpack::type_error();
+					if (o.via.array.size != 3) throw msgpack::type_error();
+					o.via.array.ptr[0] >> v.bot_id;
+					o.via.array.ptr[1] >> v.mass;
+					o.via.array.ptr[2] >> v.new_head_positions;
+					return o;
+				}
+			};
+
+			template <> struct pack<Vector2D>
+			{
+				template <typename Stream> msgpack::packer<Stream>& operator()(msgpack::packer<Stream>& o, Vector2D const& v) const
+				{
+					o.pack_array(2);
+					o.pack(v.x());
+					o.pack(v.y());
+					return o;
+				}
+			};
+
+			template<> struct convert<Vector2D>
+			{
+				msgpack::object const& operator()(msgpack::object const& o, Vector2D& v) const
+				{
+					if (o.type != msgpack::type::ARRAY) throw msgpack::type_error();
+					if (o.via.array.size != 2) throw msgpack::type_error();
+					v = {
+						o.via.array.ptr[0].via.f64,
+						o.via.array.ptr[1].via.f64
+					};
+					return o;
+				}
+			};
+
 			template <> struct pack<MsgPackProtocol::BotKillMessage>
 			{
 				template <typename Stream> msgpack::packer<Stream>& operator()(msgpack::packer<Stream>& o, MsgPackProtocol::BotKillMessage const& v) const
@@ -410,6 +513,56 @@ namespace msgpack {
 					if (o.via.array.size != 2) throw msgpack::type_error();
 					o.via.array.ptr[0] >> v.viewer_key;
 					o.via.array.ptr[1] >> v.message;
+					return o;
+				}
+			};
+
+			template <> struct pack<MsgPackProtocol::BotStatsMessage>
+			{
+				template <typename Stream> msgpack::packer<Stream>& operator()(msgpack::packer<Stream>& o, MsgPackProtocol::BotStatsMessage const& v) const
+				{
+					o.pack_array(3);
+					o.pack(MsgPackProtocol::PROTOCOL_VERSION);
+					o.pack(static_cast<int>(MsgPackProtocol::MESSAGE_TYPE_BOT_STATS));
+					o.pack(v.items);
+					return o;
+				}
+			};
+
+			template<> struct convert<MsgPackProtocol::BotStatsMessage>
+			{
+				msgpack::object const& operator()(msgpack::object const& o, MsgPackProtocol::BotStatsMessage& v) const
+				{
+					if (o.type != msgpack::type::ARRAY) throw msgpack::type_error();
+					if (o.via.array.size != 3) throw msgpack::type_error();
+					o.via.array.ptr[2] >> v.items;
+					return o;
+				}
+			};
+
+			template <> struct pack<MsgPackProtocol::BotStatsItem>
+			{
+				template <typename Stream> msgpack::packer<Stream>& operator()(msgpack::packer<Stream>& o, MsgPackProtocol::BotStatsItem const& v) const
+				{
+					o.pack_array(4);
+					o.pack(v.bot_id);
+					o.pack(v.natural_food_consumed);
+					o.pack(v.carrison_food_consumed);
+					o.pack(v.hunted_food_consumed);
+					return o;
+				}
+			};
+
+			template<> struct convert<MsgPackProtocol::BotStatsItem>
+			{
+				msgpack::object const& operator()(msgpack::object const& o, MsgPackProtocol::BotStatsItem& v) const
+				{
+					if (o.type != msgpack::type::ARRAY) throw msgpack::type_error();
+					if (o.via.array.size != 4) throw msgpack::type_error();
+					o.via.array.ptr[0] >> v.bot_id;
+					o.via.array.ptr[1] >> v.natural_food_consumed;
+					o.via.array.ptr[2] >> v.carrison_food_consumed;
+					o.via.array.ptr[3] >> v.hunted_food_consumed;
 					return o;
 				}
 			};

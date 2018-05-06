@@ -114,6 +114,22 @@ void TcpProtocol::OnMessageReceived(const char* data, size_t count)
 			break;
 		}
 
+		case MsgPackProtocol::MESSAGE_TYPE_BOT_STATS:
+		{
+			auto msg = std::make_unique<MsgPackProtocol::BotStatsMessage>();
+			obj.get().convert(*msg);
+			OnBotStatsReceived(std::move(msg));
+			break;
+		}
+
+		case MsgPackProtocol::MESSAGE_TYPE_BOT_MOVE_HEAD:
+		{
+			auto msg = std::make_unique<MsgPackProtocol::BotMoveHeadMessage>();
+			obj.get().convert(*msg);
+			OnBotMoveHeadReceived(std::move(msg));
+			break;
+		}
+
 		case MsgPackProtocol::MESSAGE_TYPE_BOT_LOG:
 		{
 			auto msg = std::make_unique<MsgPackProtocol::BotLogMessage>();
@@ -226,4 +242,14 @@ void TcpProtocol::OnBotLogReceived(std::unique_ptr<MsgPackProtocol::BotLogMessag
 	{
 		_pendingLogItems[item.viewer_key].emplace_back(item);
 	}
+}
+
+void TcpProtocol::OnBotStatsReceived(std::unique_ptr<MsgPackProtocol::BotStatsMessage> msg)
+{
+	_pendingMessages.push_back(std::move(msg));
+}
+
+void TcpProtocol::OnBotMoveHeadReceived(std::unique_ptr<MsgPackProtocol::BotMoveHeadMessage> msg)
+{
+	_pendingMessages.push_back(std::move(msg));
 }

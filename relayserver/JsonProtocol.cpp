@@ -22,6 +22,12 @@ void MsgPackProtocol::to_json(nlohmann::json &j, const MsgPackProtocol::Message 
 		case MESSAGE_TYPE_BOT_MOVE:
 			to_json(j, *static_cast<const BotMoveMessage*>(&msg));
 			break;
+		case MESSAGE_TYPE_BOT_STATS:
+			to_json(j, *static_cast<const BotStatsMessage*>(&msg));
+			break;
+		case MESSAGE_TYPE_BOT_MOVE_HEAD:
+			to_json(j, *static_cast<const BotMoveHeadMessage*>(&msg));
+			break;
 		case MESSAGE_TYPE_FOOD_SPAWN:
 			to_json(j, *static_cast<const FoodSpawnMessage*>(&msg));
 			break;
@@ -143,6 +149,46 @@ void MsgPackProtocol::to_json(nlohmann::json &j, const MsgPackProtocol::BotMoveI
 		{"segment_data", item.new_segments},
 		{"length", item.current_length},
 		{"segment_radius", item.current_segment_radius}
+	};
+}
+
+void MsgPackProtocol::to_json(nlohmann::json &j, const MsgPackProtocol::BotStatsMessage &msg)
+{
+	json data = json::object();
+	for (auto& item: msg.items)
+	{
+		data[std::to_string(item.bot_id)] = {
+			{ "n", item.natural_food_consumed },
+			{ "c", item.carrison_food_consumed },
+			{ "h", item.hunted_food_consumed }
+		};
+	}
+	j = json {
+		{"t", "BotStats"},
+		{"data", data}
+	};
+}
+
+void MsgPackProtocol::to_json(nlohmann::json &j, const MsgPackProtocol::BotMoveHeadMessage &msg)
+{
+	j = json {
+		{"t", "BotMoveHead"},
+		{"items", msg.items}
+	};
+}
+
+void MsgPackProtocol::to_json(nlohmann::json &j, const MsgPackProtocol::BotMoveHeadItem &item)
+{
+	auto positions = json::array();
+	for (auto& pos: item.new_head_positions)
+	{
+		positions.push_back(json::array_t { pos.x(), pos.y() });
+	}
+
+	j = json {
+		{"bot_id", item.bot_id},
+		{"m", item.mass},
+		{"p", positions}
 	};
 }
 

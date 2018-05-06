@@ -18,6 +18,9 @@ namespace MsgPackProtocol
 	void to_json(json& j, const BotKillMessage& msg);
 	void to_json(json& j, const BotMoveMessage& msg);
 	void to_json(json& j, const BotMoveItem& item);
+	void to_json(json& j, const BotStatsMessage& msg);
+	void to_json(json& j, const BotMoveHeadMessage& msg);
+	void to_json(json& j, const BotMoveHeadItem& item);
 	void to_json(json& j, const FoodSpawnMessage& msg);
 	void to_json(json& j, const FoodConsumeMessage& msg);
 	void to_json(json& j, const FoodConsumeItem& item);
