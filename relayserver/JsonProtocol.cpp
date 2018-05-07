@@ -28,6 +28,9 @@ void MsgPackProtocol::to_json(nlohmann::json &j, const MsgPackProtocol::Message 
 		case MESSAGE_TYPE_BOT_MOVE_HEAD:
 			to_json(j, *static_cast<const BotMoveHeadMessage*>(&msg));
 			break;
+		case MESSAGE_TYPE_BOT_LOG:
+			to_json(j, *static_cast<const BotLogMessage*>(&msg));
+			break;
 		case MESSAGE_TYPE_FOOD_SPAWN:
 			to_json(j, *static_cast<const FoodSpawnMessage*>(&msg));
 			break;
