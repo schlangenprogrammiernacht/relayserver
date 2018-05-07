@@ -95,8 +95,11 @@ void TcpProtocol::OnMessageReceived(const char* data, size_t count)
 			break;
 
 		case MsgPackProtocol::MESSAGE_TYPE_TICK:
-			OnTickReceived(obj.get().as<MsgPackProtocol::TickMessage>());
+		{
+			auto msg = std::make_unique<MsgPackProtocol::TickMessage>();
+			OnTickReceived(std::move(msg));
 			break;
+		}
 
 		case MsgPackProtocol::MESSAGE_TYPE_BOT_SPAWN:
 			OnBotSpawnReceived(obj.get().as<MsgPackProtocol::BotSpawnMessage>());
@@ -172,9 +175,11 @@ void TcpProtocol::OnWorldUpdateReceived(const MsgPackProtocol::WorldUpdateMessag
 	}
 }
 
-void TcpProtocol::OnTickReceived(const MsgPackProtocol::TickMessage &msg)
+void TcpProtocol::OnTickReceived(std::unique_ptr<MsgPackProtocol::TickMessage> msg)
 {
-	_frameCompleteCallback(msg.frame_id);
+	auto frame_id = msg->frame_id;
+	_pendingMessages.push_back(std::move(msg));
+	_frameCompleteCallback(frame_id);
 	_pendingMessages.clear();
 }
 
@@ -246,6 +251,7 @@ void TcpProtocol::OnBotLogReceived(std::unique_ptr<MsgPackProtocol::BotLogMessag
 
 void TcpProtocol::OnBotStatsReceived(std::unique_ptr<MsgPackProtocol::BotStatsMessage> msg)
 {
+	_botStats = *msg;
 	_pendingMessages.push_back(std::move(msg));
 }
 

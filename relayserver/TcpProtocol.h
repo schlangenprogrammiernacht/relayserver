@@ -37,6 +37,7 @@ class TcpProtocol
 
 		FrameCompleteCallback _frameCompleteCallback;
 		MsgPackProtocol::GameInfoMessage _gameInfo;
+		MsgPackProtocol::BotStatsMessage _botStats;
 		std::map<guid_t,FoodItem> _foodMap;
 		std::map<guid_t,BotItem> _botsMap;
 		std::vector<std::unique_ptr<MsgPackProtocol::Message>> _pendingMessages;
@@ -47,7 +48,7 @@ class TcpProtocol
 
 		void OnGameInfoReceived(const MsgPackProtocol::GameInfoMessage& msg);
 		void OnWorldUpdateReceived(const MsgPackProtocol::WorldUpdateMessage& msg);
-		void OnTickReceived(const MsgPackProtocol::TickMessage& msg);
+		void OnTickReceived(std::unique_ptr<MsgPackProtocol::TickMessage> msg);
 
 		void OnFoodSpawnReceived(const MsgPackProtocol::FoodSpawnMessage& msg);
 		void OnFoodConsumedReceived(const MsgPackProtocol::FoodConsumeMessage& msg);
