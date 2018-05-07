@@ -246,7 +246,7 @@ void TcpProtocol::OnBotMoveReceived(std::unique_ptr<MsgPackProtocol::BotMoveMess
 		}
 
 	}
-	_pendingMessages.push_back(std::move(msg));
+	//_pendingMessages.push_back(std::move(msg));
 }
 
 void TcpProtocol::OnBotLogReceived(std::unique_ptr<MsgPackProtocol::BotLogMessage> msg)
