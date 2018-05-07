@@ -4,9 +4,9 @@
 [submodule "lib/msgpack-c"]
 	path = lib/msgpack-c
 	url = https://github.com/msgpack/msgpack-c.git
-[submodule "lib/uWebSockets"]
-	path = lib/uWebSockets
-	url = ../uWebSockets.git
 [submodule "lib/nlohmann"]
 	path = lib/nlohmann
 	url = https://github.com/nlohmann/json.git
+[submodule "lib/uWebSockets"]
+	path = lib/uWebSockets
+	url = ../uWebSockets.git
