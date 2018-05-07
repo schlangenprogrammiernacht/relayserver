@@ -7,7 +7,6 @@
 [submodule "lib/uWebSockets"]
 	path = lib/uWebSockets
 	url = ../uWebSockets.git
-	branch = cmake
 [submodule "lib/nlohmann"]
 	path = lib/nlohmann
 	url = https://github.com/nlohmann/json.git
