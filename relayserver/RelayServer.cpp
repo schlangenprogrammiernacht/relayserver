@@ -58,14 +58,13 @@ int RelayServer::Run()
 	);
 
 	_tcpProtocol.SetStatsReceivedCallback([this](const MsgPackProtocol::BotStatsMessage& msg) {
-		/*std::string content = json(msg).dump();
+		std::string content = json(msg).dump();
 		std::stringstream s;
 		s << "HTTP/1.0 200 OK\r\n";
 		s << "Content-Length: " << content.size() << "\r\n";
-		s << "Content-Type: application/json\r\n\r\n";
+		s << "Content-Type: application/json; charset=UTF-8\r\n\r\n";
 		s << content;
-		_statsHTTPResponse = s.str();*/
-		_statsHTTPResponse = json(msg).dump();
+		_statsHTTPResponse = s.str();
 	});
 
 	epoll.AddFileDescriptor(_clientSocket, EPOLLIN|EPOLLPRI|EPOLLERR);
@@ -76,6 +75,7 @@ int RelayServer::Run()
 			ws->setUserData(new WebsocketConnection(ws));
 		}
 	);
+
 	h.onDisconnection(
 		[](uWS::WebSocket<uWS::SERVER> *ws, int code, const char *message, size_t length)
 		{
@@ -116,7 +116,8 @@ int RelayServer::Run()
 	{
 		if ((req.getMethod()==uWS::METHOD_GET) && (req.getUrl().toString()=="/stats"))
 		{
-			res->end(_statsHTTPResponse.data(), _statsHTTPResponse.length());
+			res->write(_statsHTTPResponse.data(), _statsHTTPResponse.length());
+			res->end();
 			return;
 		}
 		res->end(response.data(), response.length());
