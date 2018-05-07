@@ -16,6 +16,11 @@ void TcpProtocol::SetFrameCompleteCallback(TcpProtocol::FrameCompleteCallback ca
 	_frameCompleteCallback = callback;
 }
 
+void TcpProtocol::SetStatsReceivedCallback(StatsReceivedCallback callback)
+{
+	_statsReceivedCallback = callback;
+}
+
 bool TcpProtocol::Read(int socket)
 {	
 	ssize_t bytesRead = read(socket, &_buf[_bufTail], _buf.size()-_bufTail);
@@ -179,7 +184,10 @@ void TcpProtocol::OnTickReceived(std::unique_ptr<MsgPackProtocol::TickMessage> m
 {
 	auto frame_id = msg->frame_id;
 	_pendingMessages.push_back(std::move(msg));
-	_frameCompleteCallback(frame_id);
+	if (_frameCompleteCallback!=nullptr)
+	{
+		_frameCompleteCallback(frame_id);
+	}
 	_pendingMessages.clear();
 }
 
@@ -252,6 +260,10 @@ void TcpProtocol::OnBotLogReceived(std::unique_ptr<MsgPackProtocol::BotLogMessag
 void TcpProtocol::OnBotStatsReceived(std::unique_ptr<MsgPackProtocol::BotStatsMessage> msg)
 {
 	_botStats = *msg;
+	if (_statsReceivedCallback!=nullptr)
+	{
+		_statsReceivedCallback(_botStats);
+	}
 	_pendingMessages.push_back(std::move(msg));
 }
 

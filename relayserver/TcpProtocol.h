@@ -15,10 +15,12 @@ class TcpProtocol
 {
 	public:
 		typedef std::function<void(uint64_t frame_id)> FrameCompleteCallback;
+		typedef std::function<void(const MsgPackProtocol::BotStatsMessage& msg)> StatsReceivedCallback;
 		static constexpr const size_t BUFFER_SIZE = 1024*1024;
 
 		TcpProtocol();
 		void SetFrameCompleteCallback(FrameCompleteCallback callback);
+		void SetStatsReceivedCallback(StatsReceivedCallback callback);
 		bool Read(int socket);
 
 		const MsgPackProtocol::GameInfoMessage& GetGameInfo() const { return _gameInfo; }
@@ -36,6 +38,7 @@ class TcpProtocol
 		size_t _bufTail=0;
 
 		FrameCompleteCallback _frameCompleteCallback;
+		StatsReceivedCallback _statsReceivedCallback;
 		MsgPackProtocol::GameInfoMessage _gameInfo;
 		MsgPackProtocol::BotStatsMessage _botStats;
 		std::map<guid_t,FoodItem> _foodMap;

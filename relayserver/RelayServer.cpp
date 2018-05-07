@@ -1,6 +1,7 @@
 #include "RelayServer.h"
 #include <iostream>
 #include <string>
+#include <sstream>
 #include <TcpServer/EPoll.h>
 #include "JsonProtocol.h"
 
@@ -55,6 +56,18 @@ int RelayServer::Run()
 			}
 		}
 	);
+
+	_tcpProtocol.SetStatsReceivedCallback([this](const MsgPackProtocol::BotStatsMessage& msg) {
+		/*std::string content = json(msg).dump();
+		std::stringstream s;
+		s << "HTTP/1.0 200 OK\r\n";
+		s << "Content-Length: " << content.size() << "\r\n";
+		s << "Content-Type: application/json\r\n\r\n";
+		s << content;
+		_statsHTTPResponse = s.str();*/
+		_statsHTTPResponse = json(msg).dump();
+	});
+
 	epoll.AddFileDescriptor(_clientSocket, EPOLLIN|EPOLLPRI|EPOLLERR);
 
 	h.onConnection(
@@ -98,9 +111,14 @@ int RelayServer::Run()
 		}
 	});
 
-	std::string response = "Hello!";
+	std::string response = "nope.";
 	h.onHttpRequest([&](uWS::HttpResponse *res, uWS::HttpRequest req, char *data, size_t length, size_t remainingBytes)
 	{
+		if ((req.getMethod()==uWS::METHOD_GET) && (req.getUrl().toString()=="/stats"))
+		{
+			res->end(_statsHTTPResponse.data(), _statsHTTPResponse.length());
+			return;
+		}
 		res->end(response.data(), response.length());
 	});
 

@@ -12,6 +12,7 @@ class RelayServer
 	private:
 		int _clientSocket;
 		TcpProtocol _tcpProtocol;
+		std::string _statsHTTPResponse;
 
 		static constexpr const char* ENV_GAMESERVER_HOST = "GAMESERVER_HOST";
 		static constexpr const char* ENV_GAMESERVER_HOST_DEFAULT = "localhost";
