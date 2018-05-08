@@ -164,6 +164,7 @@ void MsgPackProtocol::to_json(nlohmann::json &j, const MsgPackProtocol::BotStats
 	for (auto& item: msg.items)
 	{
 		data[std::to_string(item.bot_id)] = {
+			{ "m", item.mass },
 			{ "n", item.natural_food_consumed },
 			{ "c", item.carrison_food_consumed },
 			{ "h", item.hunted_food_consumed }

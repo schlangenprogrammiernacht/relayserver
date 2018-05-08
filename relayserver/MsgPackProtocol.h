@@ -79,6 +79,7 @@ namespace MsgPackProtocol
 		double natural_food_consumed;
 		double carrison_food_consumed;
 		double hunted_food_consumed;
+		double mass;
 	};
 
 	struct Message
@@ -548,11 +549,12 @@ namespace msgpack {
 			{
 				template <typename Stream> msgpack::packer<Stream>& operator()(msgpack::packer<Stream>& o, MsgPackProtocol::BotStatsItem const& v) const
 				{
-					o.pack_array(4);
+					o.pack_array(5);
 					o.pack(v.bot_id);
 					o.pack(v.natural_food_consumed);
 					o.pack(v.carrison_food_consumed);
 					o.pack(v.hunted_food_consumed);
+					o.pack(v.mass);
 					return o;
 				}
 			};
@@ -562,11 +564,12 @@ namespace msgpack {
 				msgpack::object const& operator()(msgpack::object const& o, MsgPackProtocol::BotStatsItem& v) const
 				{
 					if (o.type != msgpack::type::ARRAY) throw msgpack::type_error();
-					if (o.via.array.size != 4) throw msgpack::type_error();
+					if (o.via.array.size != 5) throw msgpack::type_error();
 					o.via.array.ptr[0] >> v.bot_id;
 					o.via.array.ptr[1] >> v.natural_food_consumed;
 					o.via.array.ptr[2] >> v.carrison_food_consumed;
 					o.via.array.ptr[3] >> v.hunted_food_consumed;
+					o.via.array.ptr[4] >> v.mass;
 					return o;
 				}
 			};
