@@ -77,7 +77,7 @@ namespace MsgPackProtocol
 	{
 		guid_t bot_id;
 		double natural_food_consumed;
-		double carrison_food_consumed;
+		double carrion_food_consumed;
 		double hunted_food_consumed;
 		double mass;
 	};
@@ -552,7 +552,7 @@ namespace msgpack {
 					o.pack_array(5);
 					o.pack(v.bot_id);
 					o.pack(v.natural_food_consumed);
-					o.pack(v.carrison_food_consumed);
+					o.pack(v.carrion_food_consumed);
 					o.pack(v.hunted_food_consumed);
 					o.pack(v.mass);
 					return o;
@@ -567,7 +567,7 @@ namespace msgpack {
 					if (o.via.array.size != 5) throw msgpack::type_error();
 					o.via.array.ptr[0] >> v.bot_id;
 					o.via.array.ptr[1] >> v.natural_food_consumed;
-					o.via.array.ptr[2] >> v.carrison_food_consumed;
+					o.via.array.ptr[2] >> v.carrion_food_consumed;
 					o.via.array.ptr[3] >> v.hunted_food_consumed;
 					o.via.array.ptr[4] >> v.mass;
 					return o;
