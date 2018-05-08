@@ -22,6 +22,12 @@ void MsgPackProtocol::pack(msgpack::sbuffer &buf, const Message &msg)
 		case MESSAGE_TYPE_BOT_MOVE:
 			msgpack::pack(buf, *static_cast<const BotMoveMessage*>(&msg));
 			break;
+		case MESSAGE_TYPE_BOT_MOVE_HEAD:
+			msgpack::pack(buf, *static_cast<const BotMoveHeadMessage*>(&msg));
+			break;
+		case MESSAGE_TYPE_BOT_STATS:
+			msgpack::pack(buf, *static_cast<const BotStatsMessage*>(&msg));
+			break;
 		case MESSAGE_TYPE_BOT_LOG:
 			msgpack::pack(buf, *static_cast<const BotLogMessage*>(&msg));
 			break;

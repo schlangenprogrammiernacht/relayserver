@@ -85,10 +85,13 @@ void MsgPackProtocol::to_json(nlohmann::json &j, const MsgPackProtocol::BotItem 
 {
 	j = json {
 		{"id", item.guid},
-		{"db_id", item.database_id},
 		{"name", item.name},
-		{"segment_radius", item.segment_radius},
+		{"db_id", item.database_id},
+		{"face", item.face_id},
+		{"dog_tag", item.dog_tag_id},
 		{"color", item.color},
+		{"mass", item.mass},
+		{"segment_radius", item.segment_radius},
 		{"snake_segments", item.segments},
 		{"heading", 0}
 	};

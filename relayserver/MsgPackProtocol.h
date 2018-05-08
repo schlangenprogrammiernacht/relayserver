@@ -49,10 +49,14 @@ namespace MsgPackProtocol
 	{
 		guid_t guid;
 		std::string name;
+		int database_id;
+		uint32_t face_id;
+		uint32_t dog_tag_id;
+		std::vector<uint32_t> color;
+
+		real_t mass;
 		real_t segment_radius;
 		std::vector<SnakeSegmentItem> segments;
-		std::vector<uint32_t> color;
-		int database_id;
 	};
 
 	struct BotLogItem
@@ -718,22 +722,16 @@ namespace msgpack {
 			{
 				template <typename Stream> msgpack::packer<Stream>& operator()(msgpack::packer<Stream>& o, MsgPackProtocol::BotItem const& v) const
 				{
-					o.pack_array(6);
+					o.pack_array(9);
 					o.pack(v.guid);
 					o.pack(v.name);
-					o.pack(v.segment_radius);
-
-					// segments
-					o.pack(v.segments);
-
-					// FIXME: colormap: array of RGB values
-					o.pack_array(3);
-					o.pack(0xFF0000);
-					o.pack(0x00FF00);
-					o.pack(0x0000FF);
-
 					o.pack(v.database_id);
-
+					o.pack(v.face_id);
+					o.pack(v.dog_tag_id);
+					o.pack(v.color);
+					o.pack(v.mass);
+					o.pack(v.segment_radius);
+					o.pack(v.segments);
 					return o;
 				}
 			};
@@ -743,13 +741,16 @@ namespace msgpack {
 				msgpack::object const& operator()(msgpack::object const& o, MsgPackProtocol::BotItem& v) const
 				{
 					if (o.type != msgpack::type::ARRAY) throw msgpack::type_error();
-					if (o.via.array.size != 6) throw msgpack::type_error();
+					if (o.via.array.size != 9) throw msgpack::type_error();
 					o.via.array.ptr[0] >> v.guid;
 					o.via.array.ptr[1] >> v.name;
-					o.via.array.ptr[2] >> v.segment_radius;
-					o.via.array.ptr[3] >> v.segments;
-					o.via.array.ptr[4] >> v.color;
-					o.via.array.ptr[5] >> v.database_id;
+					o.via.array.ptr[2] >> v.database_id;
+					o.via.array.ptr[3] >> v.face_id;
+					o.via.array.ptr[4] >> v.dog_tag_id;
+					o.via.array.ptr[5] >> v.color;
+					o.via.array.ptr[6] >> v.mass;
+					o.via.array.ptr[7] >> v.segment_radius;
+					o.via.array.ptr[8] >> v.segments;
 					for (auto &segmentItem: v.segments)
 					{
 						segmentItem.bot_id = v.guid;
