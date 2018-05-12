@@ -123,7 +123,9 @@ int RelayServer::Run()
 		res->end(response.data(), response.length());
 	});
 
-	if (!h.listen(atoi(websocketPort)))
+	auto listenPort = atoi(websocketPort);
+	fprintf(stderr, "listening on port %d...\n", listenPort);
+	if (!h.listen(listenPort))
 	{
 		return -1;
 	}

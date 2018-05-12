@@ -51,7 +51,7 @@ class TcpProtocol
 
 		void OnGameInfoReceived(const MsgPackProtocol::GameInfoMessage& msg);
 		void OnWorldUpdateReceived(const MsgPackProtocol::WorldUpdateMessage& msg);
-		void OnTickReceived(std::unique_ptr<MsgPackProtocol::TickMessage> msg);
+		void OnTickReceived(const MsgPackProtocol::TickMessage &msg);
 
 		void OnFoodSpawnReceived(const MsgPackProtocol::FoodSpawnMessage& msg);
 		void OnFoodConsumedReceived(const MsgPackProtocol::FoodConsumeMessage& msg);

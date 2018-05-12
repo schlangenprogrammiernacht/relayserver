@@ -101,8 +101,7 @@ void TcpProtocol::OnMessageReceived(const char* data, size_t count)
 
 		case MsgPackProtocol::MESSAGE_TYPE_TICK:
 		{
-			auto msg = std::make_unique<MsgPackProtocol::TickMessage>();
-			OnTickReceived(std::move(msg));
+			OnTickReceived(obj.get().as<MsgPackProtocol::TickMessage>());
 			break;
 		}
 
@@ -180,13 +179,12 @@ void TcpProtocol::OnWorldUpdateReceived(const MsgPackProtocol::WorldUpdateMessag
 	}
 }
 
-void TcpProtocol::OnTickReceived(std::unique_ptr<MsgPackProtocol::TickMessage> msg)
+void TcpProtocol::OnTickReceived(const MsgPackProtocol::TickMessage& msg)
 {
-	auto frame_id = msg->frame_id;
-	_pendingMessages.push_back(std::move(msg));
+	_pendingMessages.push_back(std::make_unique<MsgPackProtocol::TickMessage>(msg));
 	if (_frameCompleteCallback!=nullptr)
 	{
-		_frameCompleteCallback(frame_id);
+		_frameCompleteCallback(msg.frame_id);
 	}
 	_pendingMessages.clear();
 }
