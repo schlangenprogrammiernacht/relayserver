@@ -5,6 +5,24 @@
 #include <TcpServer/EPoll.h>
 #include "JsonProtocol.h"
 
+double get_hires_time(void) {
+	struct timespec clk;
+	clock_gettime(CLOCK_MONOTONIC, &clk);
+	return (double)clk.tv_sec + 1.0e-9f * clk.tv_nsec;
+}
+
+void sleep_until(double hires_time) {
+	struct timespec tv;
+	int ret;
+
+	tv.tv_sec = hires_time;
+	tv.tv_nsec = (uint64_t)(1e9 * hires_time) % 1000000000;
+	do {
+		ret = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &tv, NULL);
+	} while(ret == EINTR);
+}
+
+
 RelayServer::RelayServer()
 {
 }
@@ -30,6 +48,8 @@ int RelayServer::Run()
 	_tcpProtocol.SetFrameCompleteCallback(
 		[this, &h](uint64_t frame_id)
 		{
+			static double nextFrameTime = get_hires_time();
+
 			auto &logMessages = _tcpProtocol.GetPendingLogItems();
 			h.getDefaultGroup<uWS::SERVER>().forEach(
 				[this, frame_id, &logMessages](uWS::WebSocket<uWS::SERVER>* sock)
@@ -54,6 +74,9 @@ int RelayServer::Run()
 				std::string s = json(*msg).dump();
 				h.getDefaultGroup<uWS::SERVER>().broadcast(s.data(), s.length(), uWS::OpCode::TEXT);
 			}
+
+			sleep_until(nextFrameTime);
+			nextFrameTime += 1/60.0;
 		}
 	);
 
@@ -130,7 +153,7 @@ int RelayServer::Run()
 		return -1;
 	}
 
-	epoll.AddFileDescriptor(h.getLoop()->getEpollFd(), EPOLLIN|EPOLLPRI|EPOLLERR|EPOLLRDHUP|EPOLLHUP); // TODO check which events are neccessary
+	epoll.AddFileDescriptor(h.getLoop()->getEpollFd(), EPOLLIN);
 	bool shouldRun = true;
 	while (shouldRun)
 	{
